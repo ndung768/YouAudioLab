@@ -22,7 +22,6 @@ the same recording as the training set.
 - [API reference](#api-reference)
 - [Development](#development)
 - [Known limitations](#known-limitations)
-- [Reproducing the SoftwareX validation checks](#reproducing-the-softwarex-validation-checks)
 - [License and data](#license-and-data)
 
 ## What it does
@@ -358,46 +357,6 @@ Further design notes: [architecture](docs/architecture.md),
   Quota and availability are outside this app.
 - Celery does not reload when you edit task code. Restart the worker.
 - Only PostgreSQL is supported for the constraint and race tests.
-
-## Reproducing the SoftwareX validation checks
-
-The SoftwareX manuscript (`docs/softwarex/YouAudioLab_SoftwareX.md`) reports a
-software-validation case, not an ASR benchmark. The integrity checks map to
-three invariants:
-
-| Invariant | What to verify | Manuscript evidence |
-| --- | --- | --- |
-| I1 Revision consistency | An extract job started against an older `definition_revision` must not become the segment’s current artifact | 0/100 stale publications in race trials |
-| I2 Artifact integrity | Repeated extracts with the same bounds and configuration yield the same SHA-256 on the stored WAV | 20 segments × 3 runs, 0 mismatches |
-| I3 Dataset provenance | Blind dual annotation retains both rows; `by_source` export places each video in exactly one fold | 0 overwrites; 0 shared videos across train/test |
-
-Automated coverage for the same mechanisms lives under `tests/` (processing
-publish/stale paths, export snapshot `content_hash`, quality/split helpers). A
-minimal local reproduction:
-
-1. Follow [Getting started](#getting-started): PostgreSQL 16, Redis, FFmpeg on
-   `PATH`, Python 3.12+, then run the Django app and a Celery worker.
-2. Create a project, import local waveform sources (or a YouTube URL as in the
-   manuscript illustrative workflow), define segments, and queue extract jobs.
-3. Confirm that editing segment bounds increments `definition_revision` and that
-   an in-flight job with a mismatched `expected_revision` ends as `STALE`
-   without replacing the current artifact.
-4. Re-run extract on a fixed set of segments and compare `ProcessingArtifact.checksum`
-   (SHA-256 of waveform bytes). The dataset `content_hash` on an export is a
-   separate digest over canonicalised snapshot metadata and ignores
-   `exported_at`.
-5. Export with `by_source`, seed 42, ratios `0.8 / 0.1 / 0.1`, and check that no
-   source video appears in both train and test.
-
-The timed 80-segment batch (56 min machine + 100 min human review) and the
-candidate–accepted edit rates in the manuscript were recorded outside this
-repository’s automated suite. Under the shipped code, recognition requires a
-current verified artifact; recompute edit rates only on segments that have both
-a verified artifact and an `AsrRun`.
-
-Version **0.1.0** does not yet include a software licence file in this tree
-(see [License and data](#license-and-data)). Before a journal release, add a
-`LICENSE`, tag `v0.1.0`, and point metadata C2/C4/C8 at that tagged tree.
 
 ## License and data
 
