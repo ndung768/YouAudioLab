@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load i18n yal_badges %}
+{% block title %}{{ project.name }} — YouAudioLab{% endblock %}
+{% block content %}
+<div data-testid="project-overview-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1">
+        <i class="bi bi-collection"></i> {% trans "Overview" %}
+        {% if role %}
+        <span class="badge {% if role == 'OWNER' %}bg-primary{% else %}bg-secondary{% endif %} ms-1">{{ role }}</span>
+        {% endif %}
+      </h1>
+      {% if project.description %}
+      <p class="text-muted mb-1">{{ project.description }}</p>
+      {% endif %}
+      <small class="text-muted">
+        {% status_badge project.status "project" %}
+        · {% trans "Language" %}: {{ project.language }}
+      </small>
+    </div>
+    {% if role == "OWNER" and project.status != "ARCHIVED" %}
+    <div class="page-head__actions">
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'settings' project.id %}">
+        <i class="bi bi-pencil"></i> {% trans "Edit settings" %}
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      {% if next_segment and project.status != "ARCHIVED" %}
+      <div class="card border-0 shadow-sm mb-4 overview-cta-card">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <h2 class="h6 mb-1"><i class="bi bi-lightning-charge text-primary"></i> {% trans "Continue labeling" %}</h2>
+            <p class="text-muted small mb-0">
+              {% blocktrans with idx=next_segment.segment_index %}Segment #{{ idx }} — open the workspace to assign labels, run ASR, and review audio.{% endblocktrans %}
+            </p>
+          </div>
+          <a class="btn btn-primary" href="{% url 'segment-workspace' project.id next_segment.id %}">
+            <i class="bi bi-box-arrow-in-right"></i> {% trans "Open workspace" %}
+          </a>
+        </div>
+      </div>
+      {% elif stats.segment_count == 0 %}
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i>
+        {% trans "Import a YouTube source and create segments before labeling." %}
+      </div>
+      {% endif %}
+
+      {% if role == "OWNER" and project.status != "ARCHIVED" %}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h2 class="h6 card-title"><i class="bi bi-youtube text-danger"></i> {% trans "Add YouTube source" %}</h2>
+          <form method="post" action="{% url 'source-list' project.id %}" class="row g-2">
+            {% csrf_token %}
+            <div class="col-md-8">
+              <input type="url" name="youtube_url" class="form-control"
+                     placeholder="https://www.youtube.com/watch?v=..." required>
+            </div>
+            <div class="col-md-4">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-plus-circle"></i> {% trans "Add & fetch" %}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h2 class="h6 mb-0"><i class="bi bi-youtube"></i> {% trans "Sources" %}</h2>
+          <a href="{% url 'source-list' project.id %}" class="btn btn-sm btn-outline-primary">{% trans "View all" %}</a>
+        </div>
+        <div class="card-body p-0">
+          {% if recent_sources %}
+          <div class="list-group list-group-flush">
+            {% for source in recent_sources %}
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start gap-2"
+               href="{% url 'source-detail' project.id source.id %}">
+              <div class="min-w-0">
+                <div class="fw-semibold text-truncate">{{ source.title|default:source.youtube_video_id }}</div>
+                <small class="text-muted">{{ source.channel_name|default:"—" }}</small>
+              </div>
+              <span class="badge text-bg-light text-dark flex-shrink-0">{{ source.get_source_status_display }}</span>
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted text-center py-4 mb-0">{% trans "No sources yet." %}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if jobs %}
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-hourglass-split"></i> {% trans "Recent jobs" %}</h2>
+        </div>
+        <div class="card-body pt-0">
+          <ul class="list-unstyled mb-0">
+            {% for job in jobs %}
+            <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <span>
+                <span class="badge text-bg-secondary">{{ job.status }}</span>
+                <span class="small text-muted ms-1">{{ job.get_job_type_display }}</span>
+                {% if job.attempt_n %}
+                <span class="small text-muted">· {% blocktrans with n=job.attempt_n %}attempt {{ n }}{% endblocktrans %}</span>
+                {% endif %}
+              </span>
+              <span class="small text-muted">{{ job.created_at }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-speedometer2"></i> {% trans "Quick overview" %}</h2>
+        </div>
+        <div class="card-body">
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div class="overview-stat-chip overview-stat-chip--blue">
+                <div class="overview-stat-chip__value">{{ stats.source_count }}</div>
+                <div class="overview-stat-chip__label">{% trans "Sources" %}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="overview-stat-chip overview-stat-chip--green">
+                <div class="overview-stat-chip__value">{{ stats.segment_count }}</div>
+                <div class="overview-stat-chip__label">{% trans "Segments" %}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="overview-stat-chip overview-stat-chip--purple">
+                <div class="overview-stat-chip__value">{{ stats.annotated_pct }}%</div>
+                <div class="overview-stat-chip__label">{% trans "Annotated" %}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="overview-stat-chip overview-stat-chip--amber">
+                <div class="overview-stat-chip__value">{{ stats.jobs_active }}</div>
+                <div class="overview-stat-chip__label">{% trans "Active jobs" %}</div>
+              </div>
+            </div>
+          </div>
+          <a href="{% url 'project-progress' project.id %}" class="btn btn-sm btn-outline-primary w-100">
+            <i class="bi bi-graph-up"></i> {% trans "View progress dashboard" %}
+          </a>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-people"></i> {% trans "Team" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted mb-3">
+            {% blocktrans count n=stats.member_count %}{{ n }} active member in this project.{% plural %}{{ n }} active members in this project.{% endblocktrans %}
+          </p>
+          <div class="d-grid gap-2">
+            <a href="{% url 'members' project.id %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-person-gear"></i> {% trans "Manage members" %}
+            </a>
+            <a href="{% url 'labels' project.id %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-tags"></i> {% trans "Project labels" %}
+            </a>
+            <a href="{% url 'segment-index' project.id %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-scissors"></i> {% trans "All segments" %}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {% if role == "OWNER" and project.status != "ARCHIVED" %}
+      <div class="card border-danger-subtle shadow-sm">
+        <div class="card-header bg-white text-danger">
+          <h2 class="h6 mb-0"><i class="bi bi-exclamation-triangle"></i> {% trans "Danger zone" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">{% trans "Archive stops writes; research metadata remains readable." %}</p>
+          <form method="post" action="{% url 'project-archive' project.id %}"
+                onsubmit="return confirm('{% trans "Archive this project?" %}');">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm w-100" type="submit">
+              <i class="bi bi-archive"></i> {% trans "Archive project" %}
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

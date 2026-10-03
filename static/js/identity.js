@@ -1,0 +1,1 @@
+/* Session identity is handled by Django forms. This module is reserved for API helpers. */

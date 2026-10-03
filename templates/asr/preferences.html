@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "ASR preferences" %} — YouAudioLab{% endblock %}
+{% block content %}
+<div data-testid="asr-preferences-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-mic"></i> {% trans "ASR preferences" %}</h1>
+      <p class="text-muted mb-0 small">
+        {% trans "System defaults or custom provider settings (Gate W7.1)." %}
+        {% if is_asr_admin %}· <a href="{% url 'system-asr' %}">{% trans "System ASR admin" %}</a>{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <p class="small mb-3">
+    {% trans "Current system defaults:" %}
+    <strong>{{ defaults.provider }}</strong>
+    · {% blocktrans with model=defaults.local_model %}local {{ model }}{% endblocktrans %}
+    · {% trans "OpenAI" %} {% if defaults.openai_enabled %}{% trans "enabled" %}{% else %}{% trans "disabled" %}{% endif %}
+    ({{ defaults.openai_default_model }})
+  </p>
+
+  <form method="post" class="mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save">
+    <div class="mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="mode" id="mode_system" value="system"
+          {% if not prefs or prefs.use_system_defaults %}checked{% endif %}>
+        <label class="form-check-label" for="mode_system">{% trans "Use system defaults" %}</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="mode" id="mode_custom" value="custom"
+          {% if prefs and not prefs.use_system_defaults %}checked{% endif %}>
+        <label class="form-check-label" for="mode_custom">{% trans "Custom" %}</label>
+      </div>
+    </div>
+
+    <div class="mb-2">
+      <label class="form-label">{% trans "Provider" %}</label>
+      <select class="form-select" name="provider">
+        <option value="local" {% if prefs.provider == "local" or not prefs.provider %}selected{% endif %}>local</option>
+        <option value="openai" {% if prefs.provider == "openai" %}selected{% endif %}>openai</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "Local model" %}</label>
+      <input class="form-control" name="local_model" value="{{ prefs.local_model|default:'' }}" placeholder="{{ defaults.local_model }}">
+    </div>
+    <div class="row">
+      <div class="col-md-6 mb-2">
+        <label class="form-label">{% trans "Local device" %}</label>
+        <input class="form-control" name="local_device" value="{{ prefs.local_device|default:'' }}" placeholder="{{ defaults.local_device }}">
+      </div>
+      <div class="col-md-6 mb-2">
+        <label class="form-label">{% trans "Local compute type" %}</label>
+        <input class="form-control" name="local_compute_type" value="{{ prefs.local_compute_type|default:'' }}" placeholder="{{ defaults.local_compute_type }}">
+      </div>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "OpenAI model" %}</label>
+      <input class="form-control" name="openai_model" value="{{ prefs.openai_model|default:'' }}" placeholder="{{ defaults.openai_default_model }}">
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "OpenAI API key" %}</label>
+      <input class="form-control" type="password" name="openai_api_key" autocomplete="off" placeholder="{% if prefs.openai_api_key_encrypted %}{% trans "•••• configured" %}{% else %}{% trans "optional" %}{% endif %}">
+      <div class="form-check mt-1">
+        <input class="form-check-input" type="checkbox" name="clear_openai_api_key" id="clear_key" value="on">
+        <label class="form-check-label small" for="clear_key">{% trans "Clear stored key" %}</label>
+      </div>
+    </div>
+    <button class="btn btn-primary" type="submit">{% trans "Save preferences" %}</button>
+  </form>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="test">
+    <button class="btn btn-outline-secondary btn-sm" type="submit">{% trans "Test connection / resolve" %}</button>
+  </form>
+</div>
+{% endblock %}

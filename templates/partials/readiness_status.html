@@ -1,0 +1,15 @@
+{% load i18n %}
+<div class="readiness-status" data-testid="ready-cell">
+  {% if is_ready %}
+  <span class="badge text-bg-success" data-testid="ready-badge">{% trans "READY" %}</span>
+  {% else %}
+  <span class="badge text-bg-warning text-dark" data-testid="ready-badge">{% trans "NOT READY" %}</span>
+  {% if gate_chips %}
+  <div class="d-flex flex-wrap gap-1 mt-1" data-testid="ready-gaps">
+    {% for chip in gate_chips %}
+    <span class="badge rounded-pill text-bg-light border text-muted fw-normal" title="{{ chip.code }}">{{ chip.label }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endif %}
+</div>

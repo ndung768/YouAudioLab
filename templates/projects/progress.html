@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% load i18n yal_badges %}
+{% block title %}{% trans "Progress" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div data-testid="project-progress-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-graph-up"></i> {% trans "Progress" %}</h1>
+      <p class="text-muted mb-0 small">{% trans "Audio pipeline and annotation metrics for this project." %}</p>
+    </div>
+    <div class="page-head__actions">
+      {% if role == "OWNER" %}
+      <a href="{% url 'project-quality' project.id %}" class="btn btn-sm btn-outline-primary" data-testid="quality-report-link">
+        <i class="bi bi-clipboard-data"></i> {% trans "Quality report" %}
+      </a>
+      {% endif %}
+      <a href="{% url 'project-overview' project.id %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-collection"></i> {% trans "Overview" %}
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Segments" %}</div>
+          <div class="display-6 fw-semibold">{{ stats.segment_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Annotated" %}</div>
+          <div class="display-6 fw-semibold">{{ stats.annotated_pct }}%</div>
+          <small class="text-muted">{% blocktrans with n=stats.segments_annotated %}{{ n }} segment(s){% endblocktrans %}</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "With transcript" %}</div>
+          <div class="display-6 fw-semibold">{{ stats.transcript_pct }}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "With artifact" %}</div>
+          <div class="display-6 fw-semibold">{{ stats.artifact_pct }}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm" data-testid="ready-stat">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Dataset ready" %}</div>
+          <div class="display-6 fw-semibold">{{ stats.ready_pct }}%</div>
+          <small class="text-muted">{% blocktrans with n=stats.segments_ready %}{{ n }} ready{% endblocktrans %}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4" data-testid="action-required">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0"><i class="bi bi-exclamation-circle"></i> {% trans "Action required" %}</h2>
+    </div>
+    <div class="card-body">
+      <ul class="mb-0">
+        {% if stats.failed_processing %}
+        <li>{% blocktrans with n=stats.failed_processing %}{{ n }} segment(s) failed processing{% endblocktrans %}</li>
+        {% endif %}
+        {% if stats.jobs_active %}
+        <li>{% blocktrans with n=stats.jobs_active %}{{ n }} job(s) still processing{% endblocktrans %}</li>
+        {% endif %}
+        {% if stats.need_artifact %}
+        <li>
+          {% blocktrans with n=stats.need_artifact %}{{ n }} segment(s) need a valid audio artifact{% endblocktrans %}
+          — <a href="{% url 'segment-index' project.id %}?annotated=no">{% trans "Open segments" %}</a>
+        </li>
+        {% endif %}
+        {% if stats.need_review %}
+        <li>
+          {% blocktrans with n=stats.need_review %}{{ n }} segment(s) waiting for Audio OK review{% endblocktrans %}
+          — <a href="{% url 'segment-index' project.id %}">{% trans "Review" %}</a>
+        </li>
+        {% endif %}
+        {% if stats.need_transcript %}
+        <li>{% blocktrans with n=stats.need_transcript %}{{ n }} segment(s) need a transcript{% endblocktrans %}</li>
+        {% endif %}
+        {% if stats.need_annotation %}
+        <li>
+          {% blocktrans with n=stats.need_annotation %}{{ n }} segment(s) need annotation{% endblocktrans %}
+          — <a href="{% url 'project-work-queue' project.id %}">{% trans "Work queue" %}</a>
+        </li>
+        {% endif %}
+        {% if not stats.failed_processing and not stats.jobs_active and not stats.need_artifact and not stats.need_review and not stats.need_transcript and not stats.need_annotation %}
+        <li class="text-muted">{% trans "Nothing pending — all tracked gates look clear." %}</li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-tags"></i> {% trans "Annotation summary" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-6">{% trans "Active annotation episodes" %}</dt>
+            <dd class="col-sm-6">{{ stats.annotation_count }}</dd>
+            <dt class="col-sm-6">{% trans "Project labels assigned" %}</dt>
+            <dd class="col-sm-6">{{ stats.project_label_count }}</dd>
+            <dt class="col-sm-6">{% trans "Active members" %}</dt>
+            <dd class="col-sm-6">{{ stats.member_count }}</dd>
+            <dt class="col-sm-6">{% trans "Active assignments" %}</dt>
+            <dd class="col-sm-6">{{ stats.assignments_active }}</dd>
+            <dt class="col-sm-6">{% trans "Assignments completed" %}</dt>
+            <dd class="col-sm-6">{{ stats.assignment_status_counts.COMPLETED|default:0 }}</dd>
+          </dl>
+          <a href="{% url 'project-work-queue' project.id %}" class="btn btn-sm btn-outline-secondary mt-2">
+            <i class="bi bi-list-task"></i> {% trans "Work queue" %}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-hourglass-split"></i> {% trans "Processing jobs" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-2">
+            <dt class="col-sm-6">{% trans "Active (queued/running)" %}</dt>
+            <dd class="col-sm-6">{{ stats.jobs_active }}</dd>
+            <dt class="col-sm-6">{% trans "Extract audio active" %}</dt>
+            <dd class="col-sm-6">{{ stats.extract_jobs_active }}</dd>
+            <dt class="col-sm-6">{% trans "ASR active" %}</dt>
+            <dd class="col-sm-6">{{ stats.asr_jobs_active }}</dd>
+            <dt class="col-sm-6">{% trans "Failed jobs" %}</dt>
+            <dd class="col-sm-6">{{ stats.jobs_failed }}</dd>
+          </dl>
+          {% if stats.job_status_counts %}
+          <div class="d-flex flex-wrap gap-1">
+            {% for status, count in stats.job_status_counts.items %}
+            <span class="badge text-bg-light text-dark">{{ status }}: {{ count }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if role == "OWNER" and iaa %}
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100" data-testid="iaa-panel">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-people"></i> {% trans "Inter-annotator agreement" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">
+            {% trans "Multi-label set Jaccard and per-label Cohen/Fleiss κ on segments labeled by ≥2 annotators. Double-assign via Work queue for overlap." %}
+          </p>
+          <dl class="row mb-2">
+            <dt class="col-sm-7">{% trans "Overlap segments" %}</dt>
+            <dd class="col-sm-5" data-testid="iaa-overlap">{{ iaa.overlap_segment_count }}</dd>
+            <dt class="col-sm-7">{% trans "Annotators with episodes" %}</dt>
+            <dd class="col-sm-5">{{ iaa.annotator_count }}</dd>
+            <dt class="col-sm-7">{% trans "Mean pairwise Jaccard" %}</dt>
+            <dd class="col-sm-5" data-testid="iaa-jaccard">
+              {% if iaa.mean_jaccard is not None %}{{ iaa.mean_jaccard|floatformat:3 }}{% else %}—{% endif %}
+            </dd>
+            <dt class="col-sm-7">{% trans "Exact-match rate" %}</dt>
+            <dd class="col-sm-5" data-testid="iaa-exact">
+              {% if iaa.exact_match_rate is not None %}{{ iaa.exact_match_rate|floatformat:3 }}{% else %}—{% endif %}
+            </dd>
+            <dt class="col-sm-7">{% trans "Mean Cohen κ (per-label)" %}</dt>
+            <dd class="col-sm-5" data-testid="iaa-cohen">
+              {% if iaa.mean_cohen_kappa is not None %}{{ iaa.mean_cohen_kappa|floatformat:3 }}{% else %}—{% endif %}
+            </dd>
+            <dt class="col-sm-7">{% trans "Fleiss κ (label presence)" %}</dt>
+            <dd class="col-sm-5" data-testid="iaa-fleiss">
+              {% if iaa.fleiss_kappa is not None %}{{ iaa.fleiss_kappa|floatformat:3 }}{% else %}—{% endif %}
+            </dd>
+            <dt class="col-sm-7">{% trans "Gold segments" %}</dt>
+            <dd class="col-sm-5" data-testid="iaa-gold">{{ iaa.gold_segment_count }}</dd>
+          </dl>
+          {% if iaa.pairs %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-2">
+              <thead class="table-light">
+                <tr>
+                  <th>{% trans "Pair" %}</th>
+                  <th class="text-end">{% trans "Shared" %}</th>
+                  <th class="text-end">{% trans "Jaccard" %}</th>
+                  <th class="text-end">{% trans "Exact" %}</th>
+                  <th class="text-end">{% trans "κ" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pair in iaa.pairs %}
+                <tr>
+                  <td class="small">{{ pair.annotator_a_name }} · {{ pair.annotator_b_name }}</td>
+                  <td class="text-end">{{ pair.shared_segments }}</td>
+                  <td class="text-end">{{ pair.mean_jaccard|floatformat:3 }}</td>
+                  <td class="text-end">{{ pair.exact_match_rate|floatformat:3 }}</td>
+                  <td class="text-end">{% if pair.mean_cohen_kappa is not None %}{{ pair.mean_cohen_kappa|floatformat:3 }}{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+          <a href="{% url 'project-export' project.id %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-download"></i> {% trans "Export for offline IAA" %}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100" data-testid="label-balance-panel">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-bar-chart"></i> {% trans "Label balance" %}</h2>
+        </div>
+        <div class="card-body">
+          {% if iaa.label_balance %}
+          <ul class="list-unstyled mb-0">
+            {% for row in iaa.label_balance %}
+            <li class="mb-3" data-testid="label-balance-row">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>{{ row.name }}</span>
+                <span class="text-muted">
+                  {{ row.episode_count }} {% trans "episodes" %} · {{ row.segment_count }} {% trans "segments" %}
+                </span>
+              </div>
+              <div class="progress" style="height: 0.5rem;" role="progressbar" aria-valuenow="{{ row.pct_of_episodes }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-secondary" style="width: {{ row.pct_of_episodes }}%;"></div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted mb-0">{% trans "No project labels yet." %}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-scissors"></i> {% trans "Segment processing status" %}</h2>
+        </div>
+        <div class="card-body">
+          {% if stats.segment_status_counts %}
+          <ul class="list-unstyled mb-0">
+            {% for status, count in stats.segment_status_counts.items %}
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span>{{ status }}</span>
+              <strong>{{ count }}</strong>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted mb-0">{% trans "No segments yet." %}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0"><i class="bi bi-person-check"></i> {% trans "Annotator productivity" %}</h2>
+        </div>
+        <div class="card-body p-0">
+          {% if annotators %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>{% trans "Annotator" %}</th>
+                  <th class="text-end">{% trans "Episodes" %}</th>
+                  <th class="text-end">{% trans "Segments" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in annotators %}
+                <tr>
+                  <td>{{ row.display_name }}</td>
+                  <td class="text-end">{{ row.episode_count }}</td>
+                  <td class="text-end">{{ row.segment_count }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="text-muted text-center py-4 mb-0">{% trans "No annotations yet." %}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

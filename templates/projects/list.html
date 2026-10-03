@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load i18n yal_badges %}
+{% block title %}{% trans "Projects" %} — YouAudioLab{% endblock %}
+{% block content %}
+<div class="workspace-overview mb-4">
+  <span class="workspace-chip"><i class="bi bi-grid-1x2"></i> {% trans "Workspace overview" %}</span>
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mt-2">
+    <div>
+      <h1 class="h2 mb-1 fw-bold">{% trans "My Projects" %}</h1>
+      <p class="text-muted mb-0">
+        {% trans "Manage YouTube sources, segments, ASR and annotations in one place." %}
+      </p>
+    </div>
+    <a href="{% url 'project-create' %}" class="btn btn-primary">
+      <i class="bi bi-folder-plus"></i> {% trans "New Project" %}
+    </a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card stats-card h-100">
+      <div class="card-body">
+        <div class="text-muted small mb-1">{% trans "Owned" %}</div>
+        <div class="display-6 fw-semibold mb-0">{{ owned_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card stats-card h-100">
+      <div class="card-body">
+        <div class="text-muted small mb-1">{% trans "Joined" %}</div>
+        <div class="display-6 fw-semibold mb-0">{{ participated_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card stats-card h-100">
+      <div class="card-body">
+        <div class="text-muted small mb-1">{% trans "Total shown" %}</div>
+        <div class="display-6 fw-semibold mb-0">{{ total_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# —— Owned —— #}
+<section class="mb-5">
+  <h2 class="h4 mb-1"><i class="bi bi-person-badge"></i> {% trans "Owned projects" %}</h2>
+  <p class="text-muted small mb-3">
+    {% trans "You manage project settings, sources, and processing." %}
+  </p>
+  {% if owned_projects %}
+  <div class="row g-4">
+    {% for project in owned_projects %}
+    <div class="col-md-6 col-xl-4">
+      <div class="card card-project h-100"
+           onclick="window.location.href='{% url 'project-overview' project.id %}'"
+           role="link" tabindex="0"
+           onkeydown="if(event.key==='Enter')this.click()">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <h3 class="h5 card-title mb-0">{{ project.name }}</h3>
+            <span class="badge bg-primary">{% trans "Owner" %}</span>
+          </div>
+          <p class="card-text text-muted small mb-3">
+            {% if project.description %}{{ project.description|truncatewords:20 }}{% else %}{% trans "No description" %}{% endif %}
+          </p>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="meta-pill"><i class="bi bi-youtube"></i> {% blocktrans count n=project.source_count %}{{ n }} source{% plural %}{{ n }} sources{% endblocktrans %}</span>
+            <span class="meta-pill"><i class="bi bi-scissors"></i> {% blocktrans count n=project.segment_count %}{{ n }} segment{% plural %}{{ n }} segments{% endblocktrans %}</span>
+            {% status_badge project.status "project" %}
+          </div>
+          <div class="d-flex justify-content-between align-items-center small text-muted">
+            <span>{% trans "Created" %}: {{ project.created_at|date:"M d, Y" }}</span>
+            <i class="bi bi-arrow-right"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info mb-0">
+    <i class="bi bi-info-circle"></i>
+    {% blocktrans %}You don't own any projects yet. Click <strong>New Project</strong> to get started.{% endblocktrans %}
+  </div>
+  {% endif %}
+</section>
+
+{# —— Participated —— #}
+<section>
+  <h2 class="h4 mb-1"><i class="bi bi-people"></i> {% trans "Joined projects" %}</h2>
+  <p class="text-muted small mb-3">
+    {% trans "Projects you annotate in but do not manage." %}
+  </p>
+  {% if participated_projects %}
+  <div class="row g-4">
+    {% for project in participated_projects %}
+    <div class="col-md-6 col-xl-4">
+      <div class="card card-project h-100"
+           onclick="window.location.href='{% url 'project-overview' project.id %}'"
+           role="link" tabindex="0"
+           onkeydown="if(event.key==='Enter')this.click()">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <h3 class="h5 card-title mb-0">{{ project.name }}</h3>
+            <span class="badge bg-secondary">{% trans "Participant" %}</span>
+          </div>
+          <p class="card-text text-muted small mb-3">
+            {% if project.description %}{{ project.description|truncatewords:20 }}{% else %}{% trans "No description" %}{% endif %}
+          </p>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="meta-pill"><i class="bi bi-youtube"></i> {% blocktrans count n=project.source_count %}{{ n }} source{% plural %}{{ n }} sources{% endblocktrans %}</span>
+            <span class="meta-pill"><i class="bi bi-scissors"></i> {% blocktrans count n=project.segment_count %}{{ n }} segment{% plural %}{{ n }} segments{% endblocktrans %}</span>
+            {% status_badge project.status "project" %}
+          </div>
+          <div class="d-flex justify-content-between align-items-center small text-muted">
+            <span>{% trans "Created" %}: {{ project.created_at|date:"M d, Y" }}</span>
+            <i class="bi bi-arrow-right"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info mb-0">
+    <i class="bi bi-info-circle"></i>
+    {% trans "You are not participating in any projects." %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,1 @@
+# Processing domain: jobs, artifacts, media cache, Celery tasks.

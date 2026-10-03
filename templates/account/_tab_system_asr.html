@@ -1,0 +1,151 @@
+{% load i18n %}
+<div data-testid="system-asr-page" data-settings-system-asr>
+  <p class="small mb-3">
+    {% trans "Admin defaults applied when a user chooses “Use system defaults” on the ASR tab (Gate W7.3)." %}
+    · <a href="{% url 'account-settings' %}?tab=asr">{% trans "Your ASR preferences" %}</a>
+  </p>
+
+  {% if not asr_secrets_configured %}
+  <div class="alert alert-warning py-2 small" role="status" data-testid="asr-secrets-missing">
+    {% blocktrans %}ASR_SECRETS_KEY is not configured — system OpenAI API keys cannot be stored. Set it in <code>.env</code> and restart the server.{% endblocktrans %}
+  </div>
+  {% endif %}
+
+  <div class="alert alert-light border py-2 small mb-3" role="status" data-testid="system-asr-summary">
+    {% trans "Current defaults:" %}
+    <strong>{{ asr_defaults.provider }}</strong>
+    · {% blocktrans with model=asr_defaults.local_model %}local {{ model }}{% endblocktrans %}
+    ({{ asr_defaults.local_device }}/{{ asr_defaults.local_compute_type }})
+    · {% trans "OpenAI" %}
+    {% if asr_defaults.openai_enabled %}{% trans "enabled" %}{% else %}{% trans "disabled" %}{% endif %}
+    · {{ asr_defaults.openai_default_model }}
+    · {% trans "Source:" %} <code>{{ asr_defaults.source }}</code>
+    · {% trans "System key:" %}
+    {% if asr_defaults.openai_api_key %}{% trans "configured" %}{% else %}{% trans "not set" %}{% endif %}
+    {% if asr_resolved and asr_resolved.use_system_defaults %}
+    <br>
+    {% trans "Your effective (system mode):" %}
+    <strong>{{ asr_resolved.provider }}</strong> / {{ asr_resolved.engine }} / {{ asr_resolved.model }}
+    {% if asr_resolved.engine == "fake" %}
+    <span class="badge text-bg-secondary ms-1">{% trans "dev fake engine" %}</span>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  {% if not asr_editable %}
+  <p class="alert alert-secondary" role="status">{% trans "Read-only: you are not an ASR admin in this environment." %}</p>
+  <dl class="row small mb-0">
+    <dt class="col-sm-3">{% trans "Provider" %}</dt><dd class="col-sm-9">{{ asr_defaults.provider }}</dd>
+    <dt class="col-sm-3">{% trans "Local model" %}</dt><dd class="col-sm-9">{{ asr_defaults.local_model }}</dd>
+    <dt class="col-sm-3">{% trans "Device / compute" %}</dt><dd class="col-sm-9">{{ asr_defaults.local_device }} / {{ asr_defaults.local_compute_type }}</dd>
+    <dt class="col-sm-3">{% trans "OpenAI" %}</dt>
+    <dd class="col-sm-9">
+      {% if asr_defaults.openai_enabled %}{% trans "enabled" %}{% else %}{% trans "disabled" %}{% endif %}
+      · {{ asr_defaults.openai_default_model }}
+      · {{ asr_defaults.openai_base_url }}
+    </dd>
+  </dl>
+  {% else %}
+  <form method="post" class="mb-3" data-sys-asr-form>
+    {% csrf_token %}
+    <input type="hidden" name="settings_tab" value="system-asr">
+    <input type="hidden" name="action" value="save">
+
+    <div class="mb-3">
+      <label class="form-label" for="sys_asr_provider">{% trans "Default provider" %}</label>
+      <select class="form-select" name="provider" id="sys_asr_provider" data-sys-asr-provider>
+        <option value="local" {% if asr_defaults.provider == "local" %}selected{% endif %}>local</option>
+        <option value="openai" {% if asr_defaults.provider == "openai" %}selected{% endif %}>openai</option>
+      </select>
+      <div class="form-text">{% trans "Users on system defaults get this provider unless they switch to Custom." %}</div>
+    </div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="sys_asr_show_both" data-sys-asr-show-both>
+      <label class="form-check-label small" for="sys_asr_show_both">
+        {% trans "Show settings for both providers" %}
+      </label>
+    </div>
+
+    <div class="card mb-3" data-sys-asr-local-fields data-sys-asr-section="local">
+      <div class="card-body">
+        <h2 class="h6 d-flex align-items-center gap-2">
+          {% trans "Local" %}
+          <span class="badge text-bg-primary d-none" data-sys-asr-default-badge="local">{% trans "Default" %}</span>
+        </h2>
+        <div class="mb-2">
+          <label class="form-label" for="sys_local_model">{% trans "Local model" %}</label>
+          <input class="form-control" name="local_model" id="sys_local_model" value="{{ asr_defaults.local_model }}">
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-2">
+            <label class="form-label" for="sys_local_device">{% trans "Local device" %}</label>
+            <input class="form-control" name="local_device" id="sys_local_device" value="{{ asr_defaults.local_device }}">
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label" for="sys_local_compute">{% trans "Local compute type" %}</label>
+            <input class="form-control" name="local_compute_type" id="sys_local_compute" value="{{ asr_defaults.local_compute_type }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3" data-sys-asr-openai-fields data-sys-asr-section="openai">
+      <div class="card-body">
+        <h2 class="h6 d-flex align-items-center gap-2">
+          {% trans "OpenAI" %}
+          <span class="badge text-bg-primary d-none" data-sys-asr-default-badge="openai">{% trans "Default" %}</span>
+        </h2>
+        <div class="mb-2">
+          <label class="form-label" for="sys_openai_enabled">{% trans "OpenAI enabled" %}</label>
+          <select class="form-select" name="openai_enabled" id="sys_openai_enabled">
+            <option value="on" {% if asr_defaults.openai_enabled %}selected{% endif %}>{% trans "enabled" %}</option>
+            <option value="off" {% if not asr_defaults.openai_enabled %}selected{% endif %}>{% trans "disabled" %}</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label" for="sys_openai_model">{% trans "OpenAI default model" %}</label>
+          <input class="form-control" name="openai_default_model" id="sys_openai_model" value="{{ asr_defaults.openai_default_model }}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label" for="sys_openai_base">{% trans "OpenAI base URL" %}</label>
+          <input class="form-control" name="openai_base_url" id="sys_openai_base" value="{{ asr_defaults.openai_base_url }}">
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="sys_openai_key">{% trans "System OpenAI API key" %}</label>
+          <input class="form-control" type="password" name="openai_api_key" id="sys_openai_key" autocomplete="off"
+            {% if not asr_secrets_configured %}disabled{% endif %}
+            placeholder="{% if not asr_secrets_configured %}{% trans "Set ASR_SECRETS_KEY first" %}{% elif asr_defaults.openai_api_key %}{% trans "•••• configured" %}{% else %}{% trans "optional" %}{% endif %}">
+          <div class="form-check mt-1">
+            <input class="form-check-input" type="checkbox" name="clear_openai_api_key" id="clear_sys_key" value="on"
+              {% if not asr_secrets_configured %}disabled{% endif %}>
+            <label class="form-check-label small" for="clear_sys_key">{% trans "Clear stored system key" %}</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" type="submit">{% trans "Save system defaults" %}</button>
+  </form>
+
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+    <form method="post" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="settings_tab" value="system-asr">
+      <input type="hidden" name="action" value="test">
+      <button class="btn btn-outline-secondary btn-sm" type="submit" data-testid="system-asr-test">
+        {% trans "Test connection" %}
+      </button>
+    </form>
+    <form method="post" class="d-inline" data-confirm="{% trans "Reset system ASR row and fall back to environment variables?" %}">
+      {% csrf_token %}
+      <input type="hidden" name="settings_tab" value="system-asr">
+      <input type="hidden" name="action" value="reset">
+      <button class="btn btn-outline-danger btn-sm" type="submit" data-testid="system-asr-reset">
+        {% trans "Reset to environment" %}
+      </button>
+    </form>
+    <span class="small text-muted">{% trans "Test checks the system OpenAI key only (ignores your personal ASR Custom prefs)." %}</span>
+  </div>
+  {% endif %}
+</div>

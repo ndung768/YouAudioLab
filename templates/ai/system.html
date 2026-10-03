@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "System AI" %} — YouAudioLab{% endblock %}
+{% block content %}
+<div data-testid="system-ai-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-cpu"></i> {% trans "System AI defaults" %}</h1>
+      <p class="text-muted mb-0 small">
+        {% trans "Admin defaults for Ollama assists (Gate W8.1)." %}
+        · <a href="{% url 'ai-preferences' %}">{% trans "Account AI preferences" %}</a>
+      </p>
+    </div>
+  </div>
+  <p class="small">{% trans "Source:" %} <strong>{{ defaults.source }}</strong></p>
+
+  {% if not editable %}
+  <p class="alert alert-secondary" role="status">{% trans "Read-only: you are not an AI admin in this environment." %}</p>
+  <dl class="row">
+    <dt class="col-sm-3">{% trans "Enabled" %}</dt><dd class="col-sm-9">{% if defaults.enabled %}{% trans "yes" %}{% else %}{% trans "no" %}{% endif %}</dd>
+    <dt class="col-sm-3">{% trans "Provider" %}</dt><dd class="col-sm-9">{{ defaults.provider }}</dd>
+    <dt class="col-sm-3">{% trans "Ollama URL" %}</dt><dd class="col-sm-9">{{ defaults.ollama_base_url }}</dd>
+    <dt class="col-sm-3">{% trans "Default model" %}</dt><dd class="col-sm-9">{{ defaults.ollama_default_model }}</dd>
+  </dl>
+  {% else %}
+  <form method="post" class="mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save">
+    <div class="mb-2">
+      <label class="form-label">{% trans "Enabled" %}</label>
+      <select class="form-select" name="enabled">
+        <option value="on" {% if defaults.enabled %}selected{% endif %}>{% trans "enabled" %}</option>
+        <option value="off" {% if not defaults.enabled %}selected{% endif %}>{% trans "disabled" %}</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "Provider" %}</label>
+      <select class="form-select" name="provider">
+        <option value="ollama" selected>ollama</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "Ollama base URL" %}</label>
+      <input class="form-control" name="ollama_base_url" value="{{ defaults.ollama_base_url }}">
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "Default model" %}</label>
+      <input class="form-control" name="ollama_default_model" value="{{ defaults.ollama_default_model }}">
+    </div>
+    <button class="btn btn-primary" type="submit">{% trans "Save system defaults" %}</button>
+  </form>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="reset">
+    <button class="btn btn-outline-danger btn-sm" type="submit">{% trans "Reset to environment" %}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

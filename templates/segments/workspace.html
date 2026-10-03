@@ -1,0 +1,808 @@
+{% extends "base.html" %}
+{% load i18n yal_badges %}
+{% block title %}{% blocktrans with n=segment.segment_index %}Segment #{{ n }}{% endblocktrans %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div
+  class="row"
+  data-segment-workspace
+  data-segment-id="{{ segment.id }}"
+  data-artifact-id="{{ segment.current_artifact_id|default:'' }}"
+  data-revision="{{ segment.definition_revision }}"
+  data-server-start="{{ segment.start_seconds }}"
+  data-server-end="{{ segment.end_seconds }}"
+  data-testid="segment-workspace"
+>
+  <div class="col-lg-7">
+    {% include "segments/_labeling_strip.html" %}
+
+    {% if segment_assignments %}
+    <div class="alert alert-info py-2 small mb-3" data-testid="segment-assignment-banner">
+      <i class="bi bi-list-task"></i>
+      {% blocktrans count counter=segment_assignments|length %}
+      You have {{ counter }} active assignment on this segment.
+      {% plural %}
+      You have {{ counter }} active assignments on this segment.
+      {% endblocktrans %}
+      {% for a in segment_assignments %}
+      <form method="post" class="d-inline ms-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="complete_assignment">
+        <input type="hidden" name="assignment_id" value="{{ a.id }}">
+        <button type="submit" class="btn btn-sm btn-outline-success" name="advance" value="0">{% trans "Mark assignment complete" %}</button>
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <p class="small text-muted mb-2">
+      <a href="{% url 'source-detail' project.id source.id %}">{{ source.title|default:source.youtube_video_id|truncatechars:60 }}</a>
+      · {% status_badge segment.processing_status "processing" %}
+      {% if source.youtube_url %}
+      · <a href="{{ source.youtube_url }}" rel="noopener noreferrer" target="_blank">{% trans "YouTube" %}</a>
+      {% endif %}
+    </p>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="h6">{% trans "Current audio" %}</h2>
+        {% if segment.current_artifact_id %}
+          <p class="small text-muted mb-2" id="audio-hint">{% trans "HTML5 player — no waveform in MVP." %}</p>
+          <p class="text-muted mb-2 d-none" id="audio-status" role="status"></p>
+          <audio id="artifact-player" controls class="w-100"></audio>
+          <button class="btn btn-sm btn-outline-primary mt-2 d-none" type="button" id="download-artifact">{% trans "Download WAV" %}</button>
+        {% else %}
+          <p class="text-muted mb-0">{% blocktrans with rev=segment.definition_revision %}No current audio artifact for definition revision {{ rev }}. Submit a processing job to produce one.{% endblocktrans %}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if conflict %}
+    <div class="alert alert-warning" role="alert" data-testid="conflict-panel" id="conflict-panel">
+      <h2 class="h6">{% trans "Revision conflict" %}</h2>
+      <p class="fw-semibold">{% trans "Your local draft was preserved. Choose Apply or Discard — nothing was written to the server." %}</p>
+      <p>
+        {% trans "The server rejected" %}
+        <code>expected_definition_revision={{ conflict.expected }}</code>.
+        {% blocktrans with cur=conflict.current %}Current server revision is <strong>{{ cur }}</strong>.{% endblocktrans %}
+        {% trans "Local draft was kept." %}
+      </p>
+      <p class="mb-2">
+        {% blocktrans with s=conflict.server_start e=conflict.server_end %}Server bounds: {{ s }}s – {{ e }}s{% endblocktrans %}
+        · {% blocktrans with s=conflict.draft_start e=conflict.draft_end %}Your draft: {{ s }}s – {{ e }}s{% endblocktrans %}
+      </p>
+      <button type="button" class="btn btn-primary btn-sm" data-testid="apply-draft" id="apply-draft">
+        {% trans "Apply my numbers" %}
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="discard-draft">
+        {% trans "Discard draft" %}
+      </button>
+    </div>
+    {% endif %}
+
+    <div class="card mb-3" data-testid="definition-panel">
+      <div class="card-body">
+        <h2 class="h6">{% trans "Definition" %}</h2>
+        <p class="small text-muted">{% trans "Set start/end bounds, then save. Saving bumps revision — submit a job to extract new audio." %}</p>
+        <form method="post" id="definition-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_definition">
+          <input
+            type="hidden"
+            name="expected_definition_revision"
+            id="expected-definition-revision"
+            value="{% if conflict %}{{ conflict.current }}{% else %}{{ segment.definition_revision }}{% endif %}"
+          >
+          <div class="row">
+            <div class="col">
+              <label class="form-label" for="start-seconds">{% trans "Start" %}</label>
+              <input
+                class="form-control"
+                name="start_seconds"
+                id="start-seconds"
+                type="number"
+                step="0.001"
+                value="{% if draft_start is not None %}{{ draft_start }}{% else %}{{ segment.start_seconds }}{% endif %}"
+                {% if role != "OWNER" or project.status == "ARCHIVED" %}readonly{% endif %}
+              >
+            </div>
+            <div class="col">
+              <label class="form-label" for="end-seconds">{% trans "End" %}</label>
+              <input
+                class="form-control"
+                name="end_seconds"
+                id="end-seconds"
+                type="number"
+                step="0.001"
+                value="{% if draft_end is not None %}{{ draft_end }}{% else %}{{ segment.end_seconds }}{% endif %}"
+                {% if role != "OWNER" or project.status == "ARCHIVED" %}readonly{% endif %}
+              >
+            </div>
+          </div>
+          {% if role == "OWNER" and project.status != "ARCHIVED" %}
+          <button class="btn btn-primary mt-2" type="submit">{% trans "Save definition" %}</button>
+          {% else %}
+          <p class="small text-muted mt-2 mb-0">{% trans "Read-only — OWNER required to edit bounds." %}</p>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <div class="card mb-3" data-testid="transcript-panel" id="transcript-panel" data-asr-panel>
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+          <div>
+            <h2 class="h6 mb-1">{% trans "Transcript" %}</h2>
+            <p class="small text-muted mb-0">
+              {% trans "Type manually or generate from audio. This box is the canonical text for labeling and export." %}
+            </p>
+          </div>
+          {% if asr_display %}
+          <p class="small text-muted mb-0 text-end" data-testid="asr-resolved">
+            {% trans "ASR:" %}
+            <strong>{{ asr_display.provider }}</strong> / {{ asr_display.model }}
+            <span class="text-muted">({{ asr_display.source }})</span>
+            {% if asr_display.engine == "fake" %}
+            <span class="badge text-bg-secondary">{% trans "fake" %}</span>
+            {% endif %}
+            · <a href="{% url 'settings' project.id %}">{% trans "Project settings" %}</a>
+          </p>
+          {% endif %}
+        </div>
+
+        <form method="post" id="transcript-form" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_transcript">
+          <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+          <label class="form-label visually-hidden" for="transcript-input">{% trans "Transcript" %}</label>
+          <textarea
+            class="form-control"
+            name="transcript"
+            id="transcript-input"
+            rows="5"
+            {% if role != "OWNER" or project.status == "ARCHIVED" %}readonly{% endif %}
+          >{{ segment.transcript|default:"" }}</textarea>
+          <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+            {% if role == "OWNER" and project.status != "ARCHIVED" %}
+            <button class="btn btn-primary" type="submit">{% trans "Save transcript" %}</button>
+            {% else %}
+            <p class="small text-muted mb-0">{% trans "Read-only for ANNOTATOR." %}</p>
+            {% endif %}
+          </div>
+        </form>
+
+        <hr class="my-3">
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+          <h3 class="h6 mb-0">{% trans "From audio (ASR)" %}</h3>
+          {% if role == "OWNER" and project.status != "ARCHIVED" %}
+            {% if segment.current_artifact_id %}
+            <form method="post" class="d-flex flex-wrap gap-2 mb-0" data-asr-generate-form>
+              {% csrf_token %}
+              <input type="hidden" name="action" value="submit_asr">
+              <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+              <button class="btn btn-outline-primary btn-sm" type="submit" {% if has_active_asr %}disabled{% endif %} data-testid="generate-asr">
+                {% trans "Generate from audio" %}
+              </button>
+              <button
+                class="btn btn-outline-secondary btn-sm"
+                type="submit"
+                name="force"
+                value="1"
+                {% if has_active_asr %}disabled{% endif %}
+                title="{% trans 'Force a new job even if an identical one already succeeded' %}"
+                data-testid="generate-asr-again"
+              >{% trans "Generate again" %}</button>
+            </form>
+            {% else %}
+            <p class="small text-muted mb-0">{% trans "Extract audio first to enable Generate." %}</p>
+            {% endif %}
+          {% endif %}
+        </div>
+
+        {% if has_active_asr %}
+        <p class="alert alert-info py-2 small" role="status" data-testid="asr-busy">
+          {% trans "Generating… refresh shortly or wait for the job to finish." %}
+        </p>
+        {% endif %}
+
+        {% if asr_latest_failed_job and not has_active_asr %}
+        <div class="alert alert-danger py-2 small" role="status" data-testid="asr-last-failure">
+          <strong>{% trans "Last generate failed" %}</strong>
+          · {{ asr_latest_failed_job.config_snapshot.provider|default:"—" }}/{{ asr_latest_failed_job.config_snapshot.model|default:"—" }}
+          {% if asr_latest_failed_job.error_code or asr_latest_failed_job.error_message %}
+          — {% if asr_latest_failed_job.error_code %}{{ asr_latest_failed_job.error_code }}{% endif %}{% if asr_latest_failed_job.error_code and asr_latest_failed_job.error_message %}: {% endif %}{{ asr_latest_failed_job.error_message }}
+          {% endif %}
+          {% if role == "OWNER" and project.status != "ARCHIVED" and asr_latest_failed_job.expected_revision == segment.definition_revision %}
+          <form method="post" class="d-inline ms-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="retry_job">
+            <input type="hidden" name="job_id" value="{{ asr_latest_failed_job.id }}">
+            <button class="btn btn-sm btn-outline-danger" type="submit">{% trans "Retry" %}</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if asr_latest_run %}
+          {% if segment.transcript == asr_latest_run.text and segment.current_asr_run_id == asr_latest_run.id %}
+          <p class="small text-success mb-2" data-testid="asr-in-use">
+            <span class="badge text-bg-success">{% trans "In transcript" %}</span>
+            {% trans "Latest ASR result matches the box above." %}
+          </p>
+          {% else %}
+          <div class="border rounded p-3 bg-light" data-testid="asr-latest-result">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+              <div>
+                <span class="badge text-bg-dark">{% trans "ASR draft" %}</span>
+                <span class="small text-muted ms-1">
+                  {{ asr_latest_run.provider }} / {{ asr_latest_run.model }} · {{ asr_latest_run.language_requested }}
+                </span>
+              </div>
+              {% if role == "OWNER" and project.status != "ARCHIVED" and not asr_latest_run.is_stale_result and asr_latest_run.segment_revision == segment.definition_revision and asr_latest_run.artifact_id == segment.current_artifact_id %}
+              <form method="post" class="mb-0">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="apply_asr">
+                <input type="hidden" name="asr_run_id" value="{{ asr_latest_run.id }}">
+                <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+                <button class="btn btn-success btn-sm" type="submit" data-testid="apply-asr">{% trans "Use in transcript box" %}</button>
+              </form>
+              {% endif %}
+            </div>
+            <pre class="mb-0 small" style="white-space:pre-wrap" data-testid="asr-latest-text">{{ asr_latest_run.text }}</pre>
+          </div>
+          {% endif %}
+        {% elif not asr_jobs and segment.current_artifact_id %}
+        <p class="small text-muted mb-0" data-testid="asr-empty">{% trans "No ASR draft yet — Generate from audio, or type above." %}</p>
+        {% endif %}
+
+        {% if asr_runs or asr_jobs %}
+        <details class="mt-3" data-testid="asr-history">
+          <summary class="fw-semibold small mb-2">
+            {% blocktrans count results=asr_runs|length %}ASR history ({{ results }} result){% plural %}ASR history ({{ results }} results){% endblocktrans %}
+            {% if asr_jobs %}
+            · {% blocktrans count n=asr_jobs|length %}{{ n }} job{% plural %}{{ n }} jobs{% endblocktrans %}
+            {% endif %}
+          </summary>
+          {% if asr_runs %}
+          <ul class="list-group list-group-flush mb-2">
+            {% for run in asr_runs %}
+            <li class="list-group-item px-0" data-testid="asr-history-run">
+              <div class="d-flex justify-content-between gap-2">
+                <div class="flex-grow-1">
+                  {% if segment.current_asr_run_id == run.id %}<span class="badge text-bg-primary">{% trans "Current" %}</span>{% endif %}
+                  {% if run.is_stale_result %}<span class="badge text-bg-secondary">{% trans "Stale" %}</span>{% endif %}
+                  <div class="small text-muted">{{ run.provider }} / {{ run.model }} · {% blocktrans with r=run.segment_revision %}rev {{ r }}{% endblocktrans %}</div>
+                  <pre class="small mb-0 mt-1" style="white-space:pre-wrap">{{ run.text|truncatechars:240 }}</pre>
+                </div>
+                {% if role == "OWNER" and project.status != "ARCHIVED" and not run.is_stale_result and run.segment_revision == segment.definition_revision and run.artifact_id == segment.current_artifact_id %}
+                  {% if asr_latest_run and run.id == asr_latest_run.id %}
+                  {% elif segment.transcript == run.text and segment.current_asr_run_id == run.id %}
+                  <span class="small text-muted align-self-center">{% trans "In use" %}</span>
+                  {% else %}
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="apply_asr">
+                    <input type="hidden" name="asr_run_id" value="{{ run.id }}">
+                    <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+                    <button class="btn btn-sm btn-outline-success" type="submit">{% trans "Use" %}</button>
+                  </form>
+                  {% endif %}
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if asr_jobs %}
+          <ul class="list-group list-group-flush mb-0">
+            {% for job in asr_jobs %}
+            <li class="list-group-item px-0" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}">
+              {% job_status_badge job %}
+              <span class="small text-muted">
+                {% blocktrans with n=job.attempt_n %}attempt {{ n }}{% endblocktrans %}
+                {% if job.config_snapshot.provider %}
+                · {{ job.config_snapshot.provider }}/{{ job.config_snapshot.model }}
+                {% endif %}
+              </span>
+              {% if job.status == "FAILED" and job.error_message %}
+              <div class="small text-danger">{{ job.error_code }} — {{ job.error_message }}</div>
+              {% endif %}
+              {% if role == "OWNER" and project.status != "ARCHIVED" %}
+                {% if job.status == "QUEUED" and not job.cancel_requested_at %}
+                <form method="post" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="cancel_job">
+                  <input type="hidden" name="job_id" value="{{ job.id }}">
+                  <button class="btn btn-sm btn-outline-warning" type="submit">{% trans "Cancel" %}</button>
+                </form>
+                {% elif job.status == "FAILED" or job.status == "SUCCEEDED" %}
+                  {% if job.expected_revision == segment.definition_revision %}
+                  <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="retry_job">
+                    <input type="hidden" name="job_id" value="{{ job.id }}">
+                    <button class="btn btn-sm btn-outline-primary" type="submit">{% trans "Retry" %}</button>
+                  </form>
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </details>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-3" data-testid="process-extract-panel">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+          <div>
+            <h2 class="h6 mb-1">{% trans "Extract audio" %}</h2>
+            <p class="small text-muted mb-0" data-testid="extract-status-line">
+              {% trans "Definition revision:" %} <strong>{{ segment.definition_revision }}</strong>
+              {% if segment.current_artifact_id %}
+              · <span class="text-success">{% trans "Audio ready" %}</span>
+              {% elif has_active_job %}
+              · <span class="text-warning">{% trans "Extract in progress" %}</span>
+              {% else %}
+              · <span>{% trans "No audio yet" %}</span>
+              {% endif %}
+            </p>
+          </div>
+          {% if role != "OWNER" %}
+          <p class="alert alert-secondary py-2 mb-0 small" role="status" data-testid="processing-readonly">
+            {% trans "Read-only: only project owners can submit, cancel, or retry jobs." %}
+          </p>
+          {% elif project.status != "ARCHIVED" %}
+          <form method="post" class="mb-0">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="submit_job">
+            <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+            <button
+              class="btn btn-primary"
+              type="submit"
+              {% if has_active_job %}disabled{% endif %}
+              data-testid="submit-job"
+            >{% trans "Submit job" %}</button>
+            {% if has_active_job %}
+            <span class="small text-muted ms-2">{% trans "Wait for the active job to finish." %}</span>
+            {% endif %}
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3" data-testid="ai-assist-panel">
+      <div class="card-body">
+        <h2 class="h6">{% trans "AI assist" %}</h2>
+        <p class="small text-muted">
+          {% trans "Ollama candidates for cleanup, labels, and metadata. Nothing writes until you Apply. This is not ASR." %}
+        </p>
+        <p class="small mb-2" data-testid="ai-resolved">
+          {% trans "This project uses:" %}
+          <strong>{{ ai_resolved.provider }}</strong>
+          · {{ ai_resolved.ollama_model }}
+          · {% if ai_resolved.enabled %}{% trans "enabled" %}{% else %}{% trans "disabled" %}{% endif %}
+          · <a href="{% url 'settings' project.id %}">{% trans "Project settings" %}</a>
+        </p>
+        {% if role != "OWNER" %}
+        <p class="alert alert-secondary py-2" role="status" data-testid="ai-assist-readonly">
+          {% trans "Read-only: only project owners can suggest or apply AI assists." %}
+        </p>
+        {% elif project.status != "ARCHIVED" %}
+          {% if not segment.transcript %}
+          <p class="small text-muted" data-testid="ai-assist-need-transcript">{% trans "Need a transcript first." %}</p>
+          {% elif not ai_resolved.enabled %}
+          <p class="small text-muted" data-testid="ai-assist-disabled">{% trans "AI provider disabled." %}</p>
+          {% else %}
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="create_ai_assist">
+              <input type="hidden" name="kind" value="transcript_cleanup">
+              <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+              <button class="btn btn-primary btn-sm" type="submit" data-testid="ai-assist-suggest">{% trans "Suggest cleanup" %}</button>
+            </form>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="create_ai_assist">
+              <input type="hidden" name="kind" value="label_suggest">
+              <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+              <button class="btn btn-outline-primary btn-sm" type="submit" data-testid="ai-assist-suggest-labels">{% trans "Suggest labels" %}</button>
+            </form>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="create_ai_assist">
+              <input type="hidden" name="kind" value="metadata_suggest">
+              <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+              <button class="btn btn-outline-primary btn-sm" type="submit" data-testid="ai-assist-suggest-metadata">{% trans "Suggest metadata" %}</button>
+            </form>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        {% if ai_assists %}
+        <ul class="list-group" data-testid="ai-assist-list">
+          {% for run in ai_assists %}
+          <li class="list-group-item" data-testid="ai-assist-item">
+            <div class="d-flex justify-content-between gap-2">
+              <div>
+                <strong>{{ run.kind }}</strong>
+                <span class="small text-muted">· {{ run.provider }}/{{ run.model }} · {% blocktrans with r=run.segment_revision %}rev {{ r }}{% endblocktrans %}</span>
+                {% if run.applied_at %}<span class="badge text-bg-success" data-testid="ai-assist-applied">{% trans "Applied" %}</span>{% endif %}
+                {% if run.segment_revision != segment.definition_revision %}<span class="badge text-bg-secondary" data-testid="ai-assist-stale">{% trans "Stale" %}</span>{% endif %}
+                <pre class="small mb-0 mt-1" style="white-space:pre-wrap" data-testid="ai-assist-candidate">{{ run.output_text }}</pre>
+              </div>
+              {% if role == "OWNER" and project.status != "ARCHIVED" and not run.applied_at and run.segment_revision == segment.definition_revision %}
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="apply_ai_assist">
+                <input type="hidden" name="assist_run_id" value="{{ run.id }}">
+                <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+                <button class="btn btn-sm btn-success" type="submit" data-testid="ai-assist-apply">{% trans "Apply" %}</button>
+              </form>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="small text-muted mb-0">{% trans "No AI assist candidates yet." %}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-3" data-testid="review-panel">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+          <div>
+            <h2 class="h6 mb-1">{% trans "Review" %}</h2>
+            {% if readiness.is_ready %}
+            <span class="badge text-bg-success" data-testid="readiness-badge">{% trans "READY FOR DATASET" %}</span>
+            {% else %}
+            <span class="badge text-bg-warning text-dark" data-testid="readiness-badge">{% trans "NOT READY" %}</span>
+            {% endif %}
+            {% if readiness.failed_gates %}
+            <div class="d-flex flex-wrap gap-1 mt-2" data-testid="ready-gaps">
+              {% for g in readiness.failed_gates %}
+              <span class="badge rounded-pill text-bg-light border text-muted fw-normal">{{ g|readiness_gate_label }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if segment.audio_reviewed_at %}
+            <p class="small text-muted mb-0 mt-2">
+              {% trans "Audio OK at" %} {{ segment.audio_reviewed_at }}
+              {% if segment.audio_reviewed_by %} · {{ segment.audio_reviewed_by.display_name }}{% endif %}
+            </p>
+            {% endif %}
+          </div>
+          {% if role == "OWNER" and project.status != "ARCHIVED" %}
+          <div>
+            {% if segment.audio_reviewed_at %}
+            <form method="post" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="clear_audio_reviewed">
+              <button type="submit" class="btn btn-sm btn-outline-secondary" data-testid="clear-audio-ok">{% trans "Clear Audio OK" %}</button>
+            </form>
+            {% elif segment.current_artifact_id %}
+            <form method="post" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="mark_audio_reviewed">
+              <button type="submit" class="btn btn-sm btn-success" data-testid="mark-audio-ok">{% trans "Audio OK" %}</button>
+            </form>
+            {% else %}
+            <button type="button" class="btn btn-sm btn-outline-secondary" disabled>{% trans "Audio OK" %}</button>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <details class="mb-3" data-testid="technical-tools">
+      <summary class="fw-semibold mb-2">{% trans "Advanced tools (artifact details, extract job history)" %}</summary>
+
+    <div class="card mb-3" data-testid="artifact-panel">
+      <div class="card-body">
+        <h2 class="h6">{% trans "Current artifact" %}</h2>
+        {% if current_artifact %}
+          <p class="mb-2">
+            {% if current_artifact.verified %}
+              <span class="badge text-bg-success">{% trans "Verified" %}</span>
+            {% else %}
+              <span class="badge text-bg-secondary">{% trans "Unverified" %}</span>
+            {% endif %}
+            · {% trans "From extract job" %}
+            {% if current_artifact.job %}
+              · {% job_status_badge current_artifact.job %}
+              · {% blocktrans with n=current_artifact.job.attempt_n %}attempt {{ n }}{% endblocktrans %}
+            {% endif %}
+          </p>
+          <dl class="row mb-2 small">
+            <dt class="col-sm-4">{% trans "Format" %}</dt>
+            <dd class="col-sm-8">{% blocktrans with fmt=current_artifact.format rate=current_artifact.sample_rate_hz channels=current_artifact.channels %}{{ fmt }} · {{ rate }} Hz · {{ channels }} ch{% endblocktrans %}</dd>
+            <dt class="col-sm-4">{% trans "Size" %}</dt><dd class="col-sm-8">{% blocktrans with n=current_artifact.file_size_bytes %}{{ n }} bytes{% endblocktrans %}</dd>
+            <dt class="col-sm-4">{% trans "Created" %}</dt><dd class="col-sm-8">{{ current_artifact.created_at }}</dd>
+          </dl>
+        {% else %}
+          <p class="text-muted mb-0">{% trans "No current audio artifact for this revision." %}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-3" data-testid="processing-panel">
+      <div class="card-body">
+        <h2 class="h6">{% trans "Job history" %}</h2>
+        <p class="small text-muted">
+          {% trans "Jobs extract audio for a specific definition revision. Polling runs while queued or running. Retry creates a new job id. Use Submit job above to start a new extract." %}
+        </p>
+
+        {% if jobs %}
+        <ul class="list-group list-group-flush">
+          {% for job in jobs %}
+          <li
+            class="list-group-item px-0"
+            data-job-id="{{ job.id }}"
+            data-job-status="{{ job.status }}"
+            {% if job.cancel_requested_at %}data-cancel-requested="true"{% endif %}
+            {% if job.status == "SUCCEEDED" and current_artifact_job_id == job.id %}data-current-artifact="true"{% endif %}
+          >
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div>
+                <div class="job-status-badge">{% job_status_badge job %}</div>
+                {% if job.status == "SUCCEEDED" and current_artifact_job_id == job.id %}
+                <span class="badge text-bg-primary" data-testid="current-artifact-badge">{% trans "Current artifact" %}</span>
+                {% endif %}
+                {% if job.status == "STALE" %}
+                <span class="badge text-bg-secondary" data-testid="job-historical-only">{% trans "Historical only — never current" %}</span>
+                {% endif %}
+                <div class="small text-muted mt-1">
+                  {% blocktrans with r=job.expected_revision %}rev {{ r }}{% endblocktrans %}{% if job.expected_revision != segment.definition_revision %} {% blocktrans with cur=segment.definition_revision %}(segment now {{ cur }}){% endblocktrans %}{% endif %}
+                  · {% blocktrans with n=job.attempt_n %}attempt {{ n }}{% endblocktrans %}
+                  · {{ job.start_seconds }}s–{{ job.end_seconds }}s
+                </div>
+                {% if job.status == "FAILED" %}
+                  {% if job.error_code or job.error_message %}
+                <div class="small text-danger">
+                  {% if job.error_code %}{{ job.error_code }}{% endif %}{% if job.error_code and job.error_message %} — {% endif %}{% if job.error_message %}{{ job.error_message }}{% endif %}
+                </div>
+                  {% endif %}
+                {% endif %}
+              </div>
+              {% if role == "OWNER" and project.status != "ARCHIVED" %}
+              <div>
+                {% if job.cancel_requested_at %}
+                {% elif job.status == "QUEUED" %}
+                <form method="post" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="cancel_job">
+                  <input type="hidden" name="job_id" value="{{ job.id }}">
+                  <button class="btn btn-sm btn-outline-warning" type="submit" data-testid="cancel-job">{% trans "Cancel" %}</button>
+                </form>
+                {% elif job.status == "RUNNING" %}
+                <form method="post" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="cancel_job">
+                  <input type="hidden" name="job_id" value="{{ job.id }}">
+                  <button class="btn btn-sm btn-outline-warning" type="submit" data-testid="request-cancel-job">{% trans "Request cancellation" %}</button>
+                </form>
+                {% elif job.status == "FAILED" or job.status == "SUCCEEDED" %}
+                  {% if job.expected_revision == segment.definition_revision %}
+                  <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="retry_job">
+                    <input type="hidden" name="job_id" value="{{ job.id }}">
+                    <button class="btn btn-sm btn-outline-primary" type="submit" data-testid="retry-job">{% trans "Retry" %}</button>
+                  </form>
+                  {% endif %}
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div data-testid="jobs-empty">
+          <p class="mb-1 fw-semibold">{% trans "No jobs yet" %}</p>
+          {% if role == "OWNER" %}
+          <p class="small text-muted mb-0">{% trans "Submit a job to extract audio for the current revision." %}</p>
+          {% else %}
+          <p class="small text-muted mb-0">{% trans "No processing jobs have been submitted for this segment." %}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    </details>
+
+    {% if role == "OWNER" and project.status != "ARCHIVED" %}
+    <div class="card mb-3 border-danger">
+      <div class="card-body">
+        <h2 class="h6 text-danger">{% trans "Danger zone" %}</h2>
+        <form method="post" data-confirm="{% trans "Soft-delete this segment? It can remain in history lists later." %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete_segment">
+          <button class="btn btn-outline-danger btn-sm" type="submit">{% trans "Soft-delete segment" %}</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <p class="mb-0">
+      <a href="{% url 'segment-index' project.id %}">{% trans "← Back to segments" %}</a>
+      ·
+      <a href="{% url 'source-detail' project.id source.id %}">{% trans "Source detail" %}</a>
+    </p>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card" data-testid="annotations-panel">
+      <div class="card-body">
+        <h2 class="h6">{% trans "Annotations" %}</h2>
+        <p class="small text-muted">
+          {% trans "Use Quick labels on the left for fast assign. This panel lists episodes (Model B)." %}
+        </p>
+
+        <form method="get" class="mb-3" id="annotation-filters">
+          {% if not blind %}
+          <fieldset class="mb-2">
+            <legend class="form-label mb-1">{% trans "Scope" %}</legend>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="scope" id="scope-everyone" value="everyone" {% if ann_scope != "mine" %}checked{% endif %} onchange="this.form.submit()">
+              <label class="form-check-label" for="scope-everyone">{% trans "Everyone" %}</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="scope" id="scope-mine" value="mine" {% if ann_scope == "mine" %}checked{% endif %} onchange="this.form.submit()">
+              <label class="form-check-label" for="scope-mine">{% trans "Mine" %}</label>
+            </div>
+          </fieldset>
+          {% else %}
+          <p class="small text-muted mb-2" data-testid="blind-annotation-note">
+            {% trans "Peer labels are hidden so you label independently. Only your episodes are listed." %}
+          </p>
+          <input type="hidden" name="scope" value="mine">
+          {% endif %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="include_removed" id="include-removed" value="1" {% if include_removed %}checked{% endif %} onchange="this.form.submit()">
+            <label class="form-check-label" for="include-removed">{% trans "Show removed history" %}</label>
+          </div>
+        </form>
+
+        {% if project.status != "ARCHIVED" %}
+        <form method="post" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="assign_label">
+          <h3 class="h6">{% trans "Assign by dropdown" %}</h3>
+          {% if active_labels %}
+          <div class="input-group">
+            <select class="form-select" name="label_id" required>
+              <option value="">{% trans "Select a label…" %}</option>
+              {% for label in active_labels %}
+              <option value="{{ label.id }}">{{ label.display_name }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn-outline-primary" type="submit">{% trans "Add" %}</button>
+          </div>
+          {% else %}
+          {% url 'labels' project.id as labels_url %}
+          <p class="small text-muted mb-0">
+            {% trans "No active labels in this project." %}
+            {% blocktrans %}Create labels on the <a href="{{ labels_url }}">Labels</a> screen.{% endblocktrans %}
+          </p>
+          {% endif %}
+        </form>
+        {% endif %}
+
+        {% if role == "OWNER" %}
+        <div class="border rounded p-3 mb-3" data-testid="gold-panel">
+          <h3 class="h6 mb-2">{% trans "Gold / adjudication" %}</h3>
+          <p class="small text-muted mb-2">
+            {% trans "Owner-only. Annotators never see gold. Training export can use these labels via the Gold supervision policy." %}
+          </p>
+          {% if project.status != "ARCHIVED" %}
+          <form method="post" class="mb-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_gold">
+            {% for label in active_labels %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="gold_label_ids" id="gold-{{ label.id }}" value="{{ label.id }}" {% if label.id in gold_label_ids %}checked{% endif %}>
+              <label class="form-check-label" for="gold-{{ label.id }}">{{ label.display_name }}</label>
+            </div>
+            {% empty %}
+            <p class="small text-muted">{% trans "Add project labels first." %}</p>
+            {% endfor %}
+            {% if active_labels %}
+            <button class="btn btn-sm btn-outline-primary mt-2" type="submit">{% trans "Save gold" %}</button>
+            {% endif %}
+          </form>
+          <form method="post" class="mb-0">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="adopt_gold_majority">
+            <button class="btn btn-sm btn-outline-secondary" type="submit">{% trans "Adopt majority" %}</button>
+          </form>
+          {% else %}
+          {% if gold_rows %}
+          <p class="small mb-0">{% for row in gold_rows %}{{ row.label.display_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+          {% else %}
+          <p class="small text-muted mb-0">{% trans "No gold labels." %}</p>
+          {% endif %}
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if active_annotations %}
+        <ul class="list-group mb-3">
+          {% for ann in active_annotations %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div>
+                <div>
+                  <strong>{{ ann.label.display_name }}</strong>
+                  <span class="badge text-bg-success">{% trans "Active" %}</span>
+                  {% if not ann.label.label.is_active %}<span class="badge text-bg-secondary">{% trans "Inactive in catalog" %}</span>{% endif %}
+                </div>
+                <div class="small text-muted">
+                  {% if ann.annotator_id == actor.id %}
+                    {% blocktrans with name=actor.display_name %}You ({{ name }}){% endblocktrans %}
+                  {% else %}
+                    {% blocktrans with who=ann.annotator.display_name %}{{ who }}{% endblocktrans %}
+                  {% endif %}
+                  · {% blocktrans with when=ann.created_at %}created {{ when }}{% endblocktrans %}
+                </div>
+              </div>
+              {% if role == "OWNER" or ann.annotator_id == actor.id %}
+              <form method="post" data-confirm="{% blocktrans with name=ann.label.display_name %}Remove annotation “{{ name }}”? You can assign it again later.{% endblocktrans %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove_annotation">
+                <input type="hidden" name="annotation_id" value="{{ ann.id }}">
+                <button class="btn btn-sm btn-outline-danger" type="submit">{% trans "Remove" %}</button>
+              </form>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="mb-3" data-testid="annotations-empty">
+          <p class="mb-1 fw-semibold">{% trans "No active annotations" %}</p>
+          {% if ann_scope == "mine" %}
+          <p class="small text-muted mb-0">{% trans "You have no active annotations on this segment." %}</p>
+          {% else %}
+          <p class="small text-muted mb-0">{% trans "Assign a label to create the first episode." %}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if include_removed and removed_annotations %}
+        <h3 class="h6">{% trans "History (removed)" %}</h3>
+        <ul class="list-group">
+          {% for ann in removed_annotations %}
+          <li class="list-group-item" data-annotation-id="{{ ann.id }}">
+            <div>
+              <strong>{{ ann.label.display_name }}</strong>
+              <span class="badge text-bg-secondary">{% trans "Removed" %}</span>
+            </div>
+            <div class="small text-muted">
+              {% if ann.annotator_id == actor.id %}{% blocktrans with name=actor.display_name %}You ({{ name }}){% endblocktrans %}{% else %}{% blocktrans with who=ann.annotator.display_name %}{{ who }}{% endblocktrans %}{% endif %}
+              · {% blocktrans with when=ann.removed_at %}removed {{ when }}{% endblocktrans %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/js/confirm.js"></script>
+<script type="module" src="/static/js/jobs.js"></script>
+<script type="module" src="/static/js/audio.js"></script>
+<script type="module" src="/static/js/workspace.js"></script>
+{% endblock %}

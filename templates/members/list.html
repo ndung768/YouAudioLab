@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Members" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="h4 mb-1"><i class="bi bi-people"></i> {% trans "Members" %}</h1>
+    <p class="text-muted mb-0 small">
+      {% trans "Active membership. Add people by login identifier (or paste a user id if needed)." %}
+    </p>
+  </div>
+</div>
+
+{% if role != "OWNER" %}
+<p class="alert alert-secondary" role="status">
+  {% trans "Read-only: only project owners can add or revoke members." %}
+</p>
+{% endif %}
+
+{% if members %}
+<table class="table" data-testid="member-list">
+  <thead><tr><th>{% trans "User" %}</th><th>{% trans "Role" %}</th><th></th></tr></thead>
+  <tbody>
+    {% for member in members %}
+    <tr>
+      <td>
+        <div class="fw-semibold">
+          {% if member.user %}{{ member.user.display_name }}{% else %}{% trans "Unknown user" %}{% endif %}
+          {% if member.user_id == actor.id %}<span class="text-muted fw-normal">{% trans "(you)" %}</span>{% endif %}
+        </div>
+        {% if member.user %}
+        <div class="small text-muted"><code>{{ member.user.login_identifier }}</code></div>
+        {% endif %}
+      </td>
+      <td><span class="badge text-bg-secondary">{{ member.role }}</span></td>
+      <td>
+        {% if role == "OWNER" and project.status != "ARCHIVED" and member.user_id != actor.id %}
+        <form method="post" class="d-inline" data-confirm="{% if member.user %}{% blocktrans with who=member.user.display_name %}Revoke membership for {{ who }}…? Historical annotations are kept.{% endblocktrans %}{% else %}{% trans "Revoke membership…? Historical annotations are kept." %}{% endif %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="revoke">
+          <input type="hidden" name="user_id" value="{{ member.user_id }}">
+          <button class="btn btn-sm btn-outline-danger" type="submit">{% trans "Revoke" %}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div data-testid="members-empty">
+  <h2 class="h5">{% trans "No active members" %}</h2>
+  <p class="text-muted">{% trans "Unexpected empty membership list for this project." %}</p>
+</div>
+{% endif %}
+
+{% if role == "OWNER" and project.status != "ARCHIVED" %}
+<div class="card">
+  <div class="card-body">
+    <h2 class="h6">{% trans "Add member" %}</h2>
+    <p class="small text-muted">{% trans "Enter an existing login identifier. A user id also works. Default role is ANNOTATOR." %}</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="mb-2">
+        <label class="form-label" for="member-user-ref">{% trans "Login or user id (required)" %}</label>
+        <input class="form-control" name="user_ref" id="member-user-ref" required autocomplete="username" data-testid="member-user-ref">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">{% trans "Role" %}</label>
+        <select class="form-select" name="role">
+          <option value="ANNOTATOR">ANNOTATOR</option>
+          <option value="OWNER">OWNER</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit">{% trans "Add member" %}</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/js/confirm.js"></script>
+{% endblock %}

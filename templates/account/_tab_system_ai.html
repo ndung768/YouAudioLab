@@ -1,0 +1,49 @@
+{% load i18n %}
+<div data-testid="system-ai-page">
+  <p class="text-muted small mb-3">{% trans "Admin defaults for Ollama assists (Gate W8.1)." %}</p>
+  <p class="small">{% trans "Source:" %} <strong>{{ ai_defaults.source }}</strong></p>
+
+  {% if not ai_editable %}
+  <p class="alert alert-secondary" role="status">{% trans "Read-only: you are not an AI admin in this environment." %}</p>
+  <dl class="row">
+    <dt class="col-sm-3">{% trans "Enabled" %}</dt><dd class="col-sm-9">{% if ai_defaults.enabled %}{% trans "yes" %}{% else %}{% trans "no" %}{% endif %}</dd>
+    <dt class="col-sm-3">{% trans "Provider" %}</dt><dd class="col-sm-9">{{ ai_defaults.provider }}</dd>
+    <dt class="col-sm-3">{% trans "Ollama URL" %}</dt><dd class="col-sm-9">{{ ai_defaults.ollama_base_url }}</dd>
+    <dt class="col-sm-3">{% trans "Default model" %}</dt><dd class="col-sm-9">{{ ai_defaults.ollama_default_model }}</dd>
+  </dl>
+  {% else %}
+  <form method="post" class="mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="settings_tab" value="system-ai">
+    <input type="hidden" name="action" value="save">
+    <div class="mb-2">
+      <label class="form-label">{% trans "Enabled" %}</label>
+      <select class="form-select" name="enabled">
+        <option value="on" {% if ai_defaults.enabled %}selected{% endif %}>{% trans "enabled" %}</option>
+        <option value="off" {% if not ai_defaults.enabled %}selected{% endif %}>{% trans "disabled" %}</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "Provider" %}</label>
+      <select class="form-select" name="provider">
+        <option value="ollama" selected>ollama</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "Ollama base URL" %}</label>
+      <input class="form-control" name="ollama_base_url" value="{{ ai_defaults.ollama_base_url }}">
+    </div>
+    <div class="mb-2">
+      <label class="form-label">{% trans "Default model" %}</label>
+      <input class="form-control" name="ollama_default_model" value="{{ ai_defaults.ollama_default_model }}">
+    </div>
+    <button class="btn btn-primary" type="submit">{% trans "Save system defaults" %}</button>
+  </form>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="settings_tab" value="system-ai">
+    <input type="hidden" name="action" value="reset">
+    <button class="btn btn-outline-danger btn-sm" type="submit">{% trans "Reset to environment" %}</button>
+  </form>
+  {% endif %}
+</div>

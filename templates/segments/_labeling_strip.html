@@ -1,0 +1,128 @@
+{% load i18n %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3" data-testid="segment-nav">
+  <div class="btn-group btn-group-sm" role="group" aria-label="{% trans 'Segment navigation' %}">
+    {% if prev_segment %}
+    <a class="btn btn-outline-secondary" href="{% url 'segment-workspace' project.id prev_segment.id %}" data-nav="prev" id="nav-prev">
+      ← {% trans "Prev" %}
+    </a>
+    {% else %}
+    <button type="button" class="btn btn-outline-secondary" disabled>← {% trans "Prev" %}</button>
+    {% endif %}
+    {% if next_segment %}
+    <a class="btn btn-outline-secondary" href="{% url 'segment-workspace' project.id next_segment.id %}" data-nav="next" id="nav-next">
+      {% trans "Next" %} →
+    </a>
+    {% else %}
+    <button type="button" class="btn btn-outline-secondary" disabled>{% trans "Next" %} →</button>
+    {% endif %}
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if next_assigned and next_assigned.id != segment.id %}
+    <a class="btn btn-sm btn-primary" href="{% url 'segment-workspace' project.id next_assigned.id %}" id="nav-next-assigned">
+      {% trans "Next assigned" %}
+    </a>
+    {% endif %}
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'segment-index' project.id %}">{% trans "All segments" %}</a>
+  </div>
+</div>
+
+<div class="card mb-3 border-primary" data-testid="labeling-strip">
+  <div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+      <div>
+        <h2 class="h6 mb-1">{% trans "Label this segment" %}</h2>
+        <p class="small text-muted mb-0">
+          {% blocktrans with n=segment.segment_index s=segment.start_seconds e=segment.end_seconds %}
+          #{{ n }} · {{ s }}s – {{ e }}s
+          {% endblocktrans %}
+          · rev {{ segment.definition_revision }}
+        </p>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="replay-segment" data-testid="replay-segment">
+        <i class="bi bi-play-circle"></i> {% trans "Replay" %} <kbd class="small">R</kbd>
+      </button>
+    </div>
+
+    {% if segment.transcript %}
+    <p class="mb-3" data-testid="labeling-transcript" style="white-space:pre-wrap">{{ segment.transcript }}</p>
+    {% if role == "OWNER" and project.status != "ARCHIVED" %}
+    <p class="small mb-3"><a href="#transcript-panel">{% trans "Edit transcript" %}</a></p>
+    {% endif %}
+    {% else %}
+    <p class="text-muted small mb-3">{% trans "No transcript yet — listen to the audio, then assign labels." %}</p>
+    {% if role == "OWNER" and project.status != "ARCHIVED" %}
+    <p class="small mb-3"><a href="#transcript-panel">{% trans "Add transcript" %}</a></p>
+    {% endif %}
+    {% endif %}
+
+    {% if project.status != "ARCHIVED" %}
+      {% if label_chips %}
+      <div class="d-flex flex-wrap gap-2" data-testid="label-chips" data-labeling-hotkeys>
+        {% for chip in label_chips %}
+          {% if chip.mine %}
+          <form method="post" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_annotation">
+            <input type="hidden" name="annotation_id" value="{{ chip.mine.id }}">
+            <button
+              type="submit"
+              class="btn btn-success"
+              data-label-chip
+              data-hotkey="{{ chip.hotkey|default:'' }}"
+              title="{% if chip.hotkey %}{% blocktrans with k=chip.hotkey %}Key {{ k }} — click to remove your label{% endblocktrans %}{% else %}{% trans 'Click to remove your label' %}{% endif %}"
+            >
+              {% if chip.hotkey %}<kbd class="me-1">{{ chip.hotkey }}</kbd>{% endif %}
+              {{ chip.label.display_name }}
+            </button>
+          </form>
+          {% else %}
+          <form method="post" class="d-inline" data-assign-form>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="assign_label">
+            <input type="hidden" name="label_id" value="{{ chip.label.id }}">
+            <input type="hidden" name="advance" value="0" data-advance-field>
+            <button
+              type="submit"
+              class="btn btn-outline-primary"
+              data-label-chip
+              data-hotkey="{{ chip.hotkey|default:'' }}"
+              title="{% if chip.hotkey %}{% blocktrans with k=chip.hotkey %}Key {{ k }} — assign{% endblocktrans %}{% else %}{% trans 'Assign' %}{% endif %}"
+            >
+              {% if chip.hotkey %}<kbd class="me-1">{{ chip.hotkey }}</kbd>{% endif %}
+              {{ chip.label.display_name }}
+            </button>
+          </form>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+        {% if next_assigned and next_assigned.id != segment.id or next_segment %}
+        <form method="post" class="d-inline" data-testid="labeling-save-next">
+          {% csrf_token %}
+          {% if segment_assignments %}
+          <input type="hidden" name="action" value="complete_assignment">
+          <input type="hidden" name="assignment_id" value="{{ segment_assignments.0.id }}">
+          <input type="hidden" name="advance" value="1">
+          {% else %}
+          <input type="hidden" name="action" value="advance_next">
+          {% endif %}
+          <button type="submit" class="btn btn-sm btn-primary" data-save-next>
+            {% trans "Save & Next" %} <kbd class="small">Ctrl+Enter</kbd>
+          </button>
+        </form>
+        {% endif %}
+        <p class="small text-muted mb-0">
+          {% trans "Filled = your active label. Ctrl+Enter advances to next assigned / next segment." %}
+        </p>
+      </div>
+      {% else %}
+      {% url 'labels' project.id as labels_url %}
+      <p class="small text-muted mb-0">
+        {% blocktrans %}No project labels yet. Add some on <a href="{{ labels_url }}">Labels</a>.{% endblocktrans %}
+      </p>
+      {% endif %}
+    {% else %}
+    <p class="small text-muted mb-0">{% trans "Project is archived — labeling is read-only." %}</p>
+    {% endif %}
+  </div>
+</div>

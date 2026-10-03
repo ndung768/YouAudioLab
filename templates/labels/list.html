@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Label settings" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div data-testid="label-list-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-tags"></i> {% trans "Label settings" %}</h1>
+      <p class="text-muted mb-0 small">{% trans "Manage labels from your catalog (project owner) for this project." %}</p>
+    </div>
+    <div class="page-head__actions">
+      <a href="{% url 'global-labels' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-sliders"></i> {% trans "Your labels" %}
+      </a>
+    </div>
+  </div>
+
+  {% if role != "OWNER" %}
+  <p class="alert alert-secondary" role="status">
+    {% trans "Read-only: only project owners can add or remove project labels." %}
+  </p>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0">{% blocktrans count count=project_labels|length %}Active label in project ({{ count }}){% plural %}Active labels in project ({{ count }}){% endblocktrans %}</h2>
+        </div>
+        <div class="card-body">
+          {% if project_labels %}
+          <div class="list-group list-group-flush">
+            {% for pl in project_labels %}
+            <div class="list-group-item px-0">
+              {% if editing_id == pl.id|stringformat:"s" and role == "OWNER" and project.status != "ARCHIVED" %}
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_override">
+                <input type="hidden" name="project_label_id" value="{{ pl.id }}">
+                <div class="mb-2">
+                  <label class="form-label small">{% trans "Display name override" %}</label>
+                  <input class="form-control form-control-sm" name="override_name" value="{{ pl.override_name|default:pl.label.name }}" placeholder="{{ pl.label.name }}">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">{% trans "Description override" %}</label>
+                  <input class="form-control form-control-sm" name="override_description" value="{{ pl.override_description|default:pl.label.description|default:'' }}">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">{% trans "Include guidance override" %}</label>
+                  <textarea class="form-control form-control-sm" name="override_include_guidance" rows="2">{{ pl.override_include_guidance|default:pl.label.include_guidance|default:'' }}</textarea>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">{% trans "Exclude guidance override" %}</label>
+                  <textarea class="form-control form-control-sm" name="override_exclude_guidance" rows="2">{{ pl.override_exclude_guidance|default:pl.label.exclude_guidance|default:'' }}</textarea>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">{% trans "Color override" %}</label>
+                  <input class="form-control form-control-sm" name="override_color" value="{{ pl.override_color|default:pl.label.color|default:'' }}">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">{% trans "Sort order" %}</label>
+                  <input class="form-control form-control-sm" name="sort_order" type="number" value="{{ pl.sort_order }}">
+                </div>
+                <button class="btn btn-primary btn-sm" type="submit">{% trans "Save" %}</button>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'labels' project.id %}">{% trans "Cancel" %}</a>
+              </form>
+              {% else %}
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <span class="label-color-swatch me-1" style="background: {{ pl.display_color|default:'#6c757d' }};"></span>
+                  <strong>{{ pl.display_name }}</strong>
+                  {% if not pl.label.is_active %}
+                  <span class="badge rounded-pill bg-secondary-subtle text-secondary ms-1">{% trans "Inactive in catalog" %}</span>
+                  {% endif %}
+                  {% if pl.display_description %}
+                  <div class="small text-muted">{{ pl.display_description }}</div>
+                  {% endif %}
+                  {% if pl.display_include_guidance %}
+                  <div class="small text-muted"><strong>{% trans "Include" %}:</strong> {{ pl.display_include_guidance }}</div>
+                  {% endif %}
+                  {% if pl.display_exclude_guidance %}
+                  <div class="small text-muted"><strong>{% trans "Exclude" %}:</strong> {{ pl.display_exclude_guidance }}</div>
+                  {% endif %}
+                  <div class="small text-muted">
+                    {% blocktrans with n=pl.usage_count %}Used in {{ n }} annotation episode(s){% endblocktrans %}
+                    · {% trans "Catalog" %}: {{ pl.label.name }}
+                  </div>
+                </div>
+                {% if role == "OWNER" and project.status != "ARCHIVED" %}
+                <div class="btn-group btn-group-sm">
+                  <a class="btn btn-outline-primary" href="?edit={{ pl.id }}"><i class="bi bi-pencil"></i> {% trans "Edit" %}</a>
+                  <form method="post" class="d-inline" data-confirm="{% trans "Remove this label from the project? Existing annotations keep their history." %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove_label">
+                    <input type="hidden" name="project_label_id" value="{{ pl.id }}">
+                    <button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-lg"></i> {% trans "Remove from project" %}</button>
+                  </form>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted text-center py-3 mb-0" data-testid="labels-empty">{% trans "No labels added to this project yet." %}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if role == "OWNER" and project.status != "ARCHIVED" %}
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0">{% blocktrans count count=available_labels|length %}Available label ({{ count }}){% plural %}Available labels ({{ count }}){% endblocktrans %}</h2>
+        </div>
+        <div class="card-body">
+          {% if available_labels %}
+          <div class="list-group list-group-flush mb-3">
+            {% for label in available_labels %}
+            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+              <div>
+                <span class="label-color-swatch me-1" style="background: {{ label.color|default:'#6c757d' }};"></span>
+                <strong>{{ label.name }}</strong>
+                {% if label.description %}<div class="small text-muted">{{ label.description }}</div>{% endif %}
+              </div>
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_label">
+                <input type="hidden" name="label_id" value="{{ label.id }}">
+                <button class="btn btn-sm btn-outline-success" type="submit"><i class="bi bi-plus-lg"></i> {% trans "Add" %}</button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted small">{% trans "All active catalog labels are already in this project, or your catalog is empty." %}</p>
+          {% endif %}
+
+          <hr>
+          <h3 class="h6">{% trans "Create label in catalog and add here" %}</h3>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_custom_label">
+            <div class="mb-2">
+              <label class="form-label">{% trans "Label name" %}</label>
+              <input class="form-control form-control-sm" name="name" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">{% trans "Description" %}</label>
+              <input class="form-control form-control-sm" name="description">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">{% trans "Color" %}</label>
+              <input class="form-control form-control-sm" name="color" type="color" value="#0f6b6b">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">{% trans "Sort order" %}</label>
+              <input class="form-control form-control-sm" name="sort_order" type="number" value="0">
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit">{% trans "Create" %}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/js/confirm.js"></script>
+{% endblock %}

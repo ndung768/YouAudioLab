@@ -1,0 +1,129 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}YouAudioLab{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="{% static 'css/app.css' %}?v=9" rel="stylesheet">
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light"{% if identity_user %} data-user-id="{{ identity_user.id }}"{% endif %}>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-2 sidebar p-3">
+        <div class="text-center mb-4">
+          <h4 class="fw-bold mb-1">
+            <a href="{% url 'home' %}" class="text-white text-decoration-none">
+              <i class="bi bi-soundwave"></i> YouAudioLab
+            </a>
+          </h4>
+          <small style="color: rgba(255,255,255,0.4);">{% trans "Audio research workspace" %}</small>
+        </div>
+        <hr>
+        <nav class="nav flex-column" aria-label="{% trans 'Primary' %}">
+          {% if is_identified %}
+          <a class="nav-link {% if request.resolver_match.url_name == 'project-list' %}active{% endif %}"
+             href="{% url 'project-list' %}">
+            <i class="bi bi-folder"></i> {% trans "Projects" %}
+          </a>
+          <a class="nav-link {% if request.resolver_match.url_name == 'project-create' %}active{% endif %}"
+             href="{% url 'project-create' %}">
+            <i class="bi bi-folder-plus"></i> {% trans "New Project" %}
+          </a>
+          <a class="nav-link {% if request.resolver_match.url_name == 'global-labels' %}active{% endif %}"
+             href="{% url 'global-labels' %}">
+            <i class="bi bi-tags"></i> {% trans "Labels" %}
+          </a>
+          <a class="nav-link {% if request.resolver_match.url_name == 'account-settings' %}active{% endif %}"
+             href="{% url 'account-settings' %}">
+            <i class="bi bi-gear"></i> {% trans "Settings" %}
+          </a>
+          {% else %}
+          <a class="nav-link active" href="{% url 'identity' %}">
+            <i class="bi bi-box-arrow-in-right"></i> {% trans "Login" %}
+          </a>
+          {% endif %}
+        </nav>
+        <hr>
+        {% include "partials/language_switcher.html" %}
+        {% if identity_user %}
+        <div class="user-profile text-center">
+          <div class="username"><i class="bi bi-person-circle"></i> {{ identity_user.display_name }}</div>
+          <div class="user-email">{{ identity_user.login_identifier }}</div>
+        </div>
+        <form method="post" action="{% url 'identity' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="clear">
+          <button type="submit" class="btn btn-logout">
+            <i class="bi bi-box-arrow-right"></i> {% trans "Logout" %}
+          </button>
+        </form>
+        {% else %}
+        <div class="text-center">
+          <a href="{% url 'identity' %}" class="btn btn-sm btn-outline-light w-100">
+            <i class="bi bi-box-arrow-in-right"></i> {% trans "Login" %}
+          </a>
+        </div>
+        {% endif %}
+        <div class="small text-center mt-4" style="color: rgba(255,255,255,0.4);">
+          <p class="mb-0">YouAudioLab &copy; 2026</p>
+        </div>
+      </div>
+
+      <div class="col-md-10 p-4">
+        {% if messages %}
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'Close' %}"></button>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if project %}
+          {% include "partials/project_nav.html" with project=project role=role %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    {% trans "Queued" as i18n_queued %}
+    {% trans "Running" as i18n_running %}
+    {% trans "Succeeded" as i18n_succeeded %}
+    {% trans "Failed" as i18n_failed %}
+    {% trans "Out of date" as i18n_stale %}
+    {% trans "Cancelled" as i18n_cancelled %}
+    {% trans "Cancellation requested…" as i18n_cancel_req %}
+    {% trans "Loading audio…" as i18n_loading_audio %}
+    {% trans "Could not load artifact audio." as i18n_audio_fail %}
+    {% trans "Artifact exists but is not verified yet." as i18n_audio_unverified %}
+    {% trans "Play segment audio" as i18n_play_segment %}
+    {% trans "Pause" as i18n_pause %}
+    {% trans "Could not play audio." as i18n_play_fail %}
+    window.YAL_I18N = {
+      Queued: "{{ i18n_queued|escapejs }}",
+      Running: "{{ i18n_running|escapejs }}",
+      Succeeded: "{{ i18n_succeeded|escapejs }}",
+      Failed: "{{ i18n_failed|escapejs }}",
+      "Out of date": "{{ i18n_stale|escapejs }}",
+      Cancelled: "{{ i18n_cancelled|escapejs }}",
+      "Cancellation requested…": "{{ i18n_cancel_req|escapejs }}",
+      "Loading audio…": "{{ i18n_loading_audio|escapejs }}",
+      "Could not load artifact audio.": "{{ i18n_audio_fail|escapejs }}",
+      "Artifact exists but is not verified yet.": "{{ i18n_audio_unverified|escapejs }}",
+      "Play segment audio": "{{ i18n_play_segment|escapejs }}",
+      Pause: "{{ i18n_pause|escapejs }}",
+      "Could not play audio.": "{{ i18n_play_fail|escapejs }}"
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="{% static 'js/api.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

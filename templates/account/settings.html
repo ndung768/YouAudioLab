@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n static %}
+{% block title %}{% trans "Settings" %} — YouAudioLab{% endblock %}
+{% block content %}
+<div data-testid="account-settings-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-gear"></i> {% trans "Settings" %}</h1>
+      <p class="text-muted mb-0 small">{% trans "Account profile and ASR / AI provider configuration." %}</p>
+    </div>
+  </div>
+
+  <div class="settings-panel card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom-0 pb-0">
+      <nav class="settings-tabs project-tabs" aria-label="{% trans 'Settings sections' %}">
+        <a class="project-tab {% if tab == 'account' %}active{% endif %}"
+           href="{% url 'account-settings' %}?tab=account">
+          <i class="bi bi-person"></i> {% trans "Account" %}
+        </a>
+        <a class="project-tab {% if tab == 'asr' %}active{% endif %}"
+           href="{% url 'account-settings' %}?tab=asr"
+           data-testid="settings-tab-asr">
+          <i class="bi bi-mic"></i> {% trans "ASR" %}
+        </a>
+        <a class="project-tab {% if tab == 'ai' %}active{% endif %}"
+           href="{% url 'account-settings' %}?tab=ai"
+           data-testid="settings-tab-ai">
+          <i class="bi bi-robot"></i> {% trans "AI" %}
+        </a>
+        {% if is_asr_admin %}
+        <a class="project-tab {% if tab == 'system-asr' %}active{% endif %}"
+           href="{% url 'account-settings' %}?tab=system-asr"
+           data-testid="settings-tab-system-asr">
+          <i class="bi bi-sliders"></i> {% trans "System ASR" %}
+        </a>
+        {% endif %}
+        {% if is_ai_admin %}
+        <a class="project-tab {% if tab == 'system-ai' %}active{% endif %}"
+           href="{% url 'account-settings' %}?tab=system-ai"
+           data-testid="settings-tab-system-ai">
+          <i class="bi bi-cpu"></i> {% trans "System AI" %}
+        </a>
+        {% endif %}
+      </nav>
+    </div>
+    <div class="card-body pt-4">
+      {% if tab == "account" %}
+        {% include "account/_tab_account.html" %}
+      {% elif tab == "asr" %}
+        {% include "account/_tab_asr.html" %}
+      {% elif tab == "ai" %}
+        {% include "account/_tab_ai.html" %}
+      {% elif tab == "system-asr" %}
+        {% include "account/_tab_system_asr.html" %}
+      {% elif tab == "system-ai" %}
+        {% include "account/_tab_system_ai.html" %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if tab == "asr" or tab == "system-asr" %}
+<script type="module" src="{% static 'js/settings_asr.js' %}"></script>
+{% endif %}
+{% if tab == "system-asr" %}
+<script type="module" src="{% static 'js/confirm.js' %}"></script>
+{% endif %}
+{% endblock %}

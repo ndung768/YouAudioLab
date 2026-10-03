@@ -1,0 +1,1 @@
+# Workspace domain: users, projects, sources, segments, labels, annotations.

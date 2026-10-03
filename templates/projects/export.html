@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Export" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div data-testid="project-export-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-download"></i> {% trans "Export dataset" %}</h1>
+      <p class="text-muted mb-0 small">
+        {% trans "Download a research snapshot. Full annotation episodes stay in JSON/CSV-IAA; training formats use supervised labels. Prefer by-source splits so the same video never leaks into train and test." %}
+      </p>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-8">
+          <label class="form-label" for="export-format">{% trans "Format" %}</label>
+          <select name="export_format" id="export-format" class="form-select" required data-testid="export-format">
+            {% for group, items in format_groups %}
+            <optgroup label="{{ group }}">
+              {% for item in items %}
+              <option value="{{ item.key }}" {% if item.key == "json" %}selected{% endif %}>{{ item.label }}</option>
+              {% endfor %}
+            </optgroup>
+            {% endfor %}
+          </select>
+          <div class="form-text">
+            {% trans "Token BIO formats are not offered. Labels in this project apply to a whole segment, not to words inside the transcript." %}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="export-source">{% trans "Source" %}</label>
+          <select name="source_id" id="export-source" class="form-select">
+            <option value="">{% trans "Entire project" %}</option>
+            {% for s in sources %}
+            <option value="{{ s.id }}">{{ s.title|default:s.youtube_video_id }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label" for="split-strategy">{% trans "Split" %}</label>
+          <select name="split_strategy" id="split-strategy" class="form-select" data-testid="export-split-strategy">
+            <option value="by_source" selected>{% trans "By source (video) — recommended" %}</option>
+            <option value="none">{% trans "None (analysis dump)" %}</option>
+          </select>
+          <div class="form-text">{% trans "Groups entire YouTube videos into train/val/test to avoid acoustic leakage." %}</div>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="split-seed">{% trans "Seed" %}</label>
+          <input class="form-control" type="number" name="split_seed" id="split-seed" value="42" data-testid="export-split-seed">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="split-train">{% trans "Train" %}</label>
+          <input class="form-control" type="number" step="0.01" min="0" max="1" name="split_train" id="split-train" value="0.8">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="split-val">{% trans "Val" %}</label>
+          <input class="form-control" type="number" step="0.01" min="0" max="1" name="split_val" id="split-val" value="0.1">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="split-test">{% trans "Test" %}</label>
+          <input class="form-control" type="number" step="0.01" min="0" max="1" name="split_test" id="split-test" value="0.1">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label" for="supervision-policy">{% trans "Supervision (training views)" %}</label>
+          <select name="supervision_policy" id="supervision-policy" class="form-select" data-testid="export-supervision">
+            <option value="majority" selected>{% trans "Majority — recommended" %}</option>
+            <option value="union">{% trans "Union (all active labels)" %}</option>
+            <option value="intersection">{% trans "Intersection (all annotators agree)" %}</option>
+            <option value="first_annotator">{% trans "First annotator" %}</option>
+            <option value="gold">{% trans "Gold (adjudicated; else majority)" %}</option>
+          </select>
+          <div class="form-text">{% trans "Research JSON and IAA CSV keep full episodes. HF/spaCy/Doccano/LLM use supervised_labels." %}</div>
+        </div>
+
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="ready_only" id="ready-only" checked data-testid="ready-only">
+            <label class="form-check-label" for="ready-only">
+              <strong>{% trans "Ready-only" %}</strong> —
+              {% trans "Export only segments that pass this project's readiness policy (audio, review, transcript, annotation)." %}
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="include_removed_annotations" id="inc-removed" checked>
+            <label class="form-check-label" for="inc-removed">{% trans "Include removed annotation episodes" %}</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="include_released_assignments" id="inc-released" checked>
+            <label class="form-check-label" for="inc-released">{% trans "Include released assignments" %}</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="include_stale_asr" id="inc-stale" checked>
+            <label class="form-check-label" for="inc-stale">{% trans "Include stale ASR runs" %}</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="include_deleted_segments" id="inc-deleted">
+            <label class="form-check-label" for="inc-deleted">{% trans "Include soft-deleted segments" %}</label>
+          </div>
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary" data-testid="export-download">
+            <i class="bi bi-download"></i> {% trans "Download" %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

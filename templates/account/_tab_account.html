@@ -1,0 +1,15 @@
+{% load i18n %}
+<div data-testid="settings-tab-account">
+  <h2 class="h6 mb-3">{% trans "Profile" %}</h2>
+  <dl class="row mb-0">
+    <dt class="col-sm-3">{% trans "Display name" %}</dt>
+    <dd class="col-sm-9">{{ actor.display_name }}</dd>
+    <dt class="col-sm-3">{% trans "Login" %}</dt>
+    <dd class="col-sm-9"><code>{{ actor.login_identifier }}</code></dd>
+    <dt class="col-sm-3">{% trans "Internal id" %}</dt>
+    <dd class="col-sm-9"><code class="small text-muted" title="{% trans 'Support / API only' %}">{{ actor.id }}</code></dd>
+  </dl>
+  <p class="text-muted small mt-3 mb-0">
+    {% trans "Use your login when someone adds you to a project. The internal id is for support and API clients only." %}
+  </p>
+</div>

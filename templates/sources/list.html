@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load i18n yal_badges %}
+{% block title %}{% trans "Sources" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="h4 mb-1"><i class="bi bi-youtube"></i> {% trans "Sources" %}</h1>
+    <p class="text-muted mb-0 small">{% trans "Import is OWNER-only. New sources start as Metadata pending." %}</p>
+  </div>
+</div>
+
+{% if sources %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>{% trans "Title" %}</th>
+          <th>{% trans "Channel" %}</th>
+          <th>{% trans "Duration" %}</th>
+          <th>{% trans "Status" %}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for source in sources %}
+        <tr>
+          <td>{{ source.title|default:source.youtube_video_id }}</td>
+          <td>{{ source.channel_name|default:"—" }}</td>
+          <td>{% if source.duration_seconds %}{{ source.duration_seconds }}{% else %}{% trans "Duration unknown" %}{% endif %}</td>
+          <td>{% status_badge source.source_status "source" %}</td>
+          <td><a href="{% url 'source-detail' project.id source.id %}">{% trans "Open" %}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle"></i>
+  {% if role == "OWNER" %}
+  {% blocktrans %}<strong>No sources yet.</strong> Use Add source below.{% endblocktrans %}
+  {% else %}
+  {% blocktrans %}<strong>No sources yet.</strong> Ask a project OWNER to import a YouTube URL.{% endblocktrans %}
+  {% endif %}
+</div>
+{% endif %}
+
+{% if role == "OWNER" and project.status != "ARCHIVED" %}
+<div class="card mt-3">
+  <div class="card-body">
+    <h2 class="h5"><i class="bi bi-plus-circle"></i> {% trans "Add source" %}</h2>
+    <p class="small text-muted">{% trans "Duplicate video ids in this project return a conflict." %}</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-2">
+        <label class="form-label" for="youtube_url">{% trans "YouTube URL" %}</label>
+        <input class="form-control" id="youtube_url" name="youtube_url" required placeholder="https://www.youtube.com/watch?v=…">
+      </div>
+      <button class="btn btn-primary" type="submit"><i class="bi bi-download"></i> {% trans "Import" %}</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

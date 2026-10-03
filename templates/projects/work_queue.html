@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Work queue" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div data-testid="project-work-queue-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-list-task"></i> {% trans "Work queue" %}</h1>
+      <p class="text-muted mb-0 small">
+        {% trans "Assign segments to annotators and track assignment progress separately from annotation episodes." %}
+      </p>
+    </div>
+    {% if next_assigned %}
+    <div class="page-head__actions">
+      <a href="{% url 'segment-workspace' project.id next_assigned.id %}" class="btn btn-sm btn-primary">
+        <i class="bi bi-play-fill"></i> {% trans "Next assigned segment" %}
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Assigned" %}</div>
+          <div class="display-6 fw-semibold">{{ status_counts.ASSIGNED|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "In progress" %}</div>
+          <div class="display-6 fw-semibold">{{ status_counts.IN_PROGRESS|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Completed" %}</div>
+          <div class="display-6 fw-semibold">{{ status_counts.COMPLETED|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Released" %}</div>
+          <div class="display-6 fw-semibold">{{ status_counts.RELEASED|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if role == "OWNER" %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0"><i class="bi bi-plus-circle"></i> {% trans "Create assignment batch" %}</h2>
+    </div>
+    <div class="card-body">
+      <form method="post" action="?{{ request.GET.urlencode }}" class="row g-3" data-testid="create-batch-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_batch">
+        <div class="col-md-6">
+          <label class="form-label">{% trans "Batch name" %}</label>
+          <input type="text" name="name" class="form-control form-control-sm" placeholder="{% trans 'Optional' %}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">{% trans "Source" %}</label>
+          <select name="source_id" class="form-select form-select-sm">
+            <option value="">{% trans "All sources" %}</option>
+            {% for s in sources %}
+            <option value="{{ s.id }}"{% if source_filter == s.id|stringformat:"s" %} selected{% endif %}>{{ s.title|default:s.youtube_video_id }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">{% trans "Used only when no specific segments are checked below." %}</div>
+        </div>
+        <div class="col-12" data-testid="segment-picker">
+          <label class="form-label">{% trans "Specific segments" %}</label>
+          <div class="border rounded p-2" style="max-height: 220px; overflow: auto;">
+            {% for seg in segments %}
+            <label class="form-check">
+              <input class="form-check-input" type="checkbox" name="segment_ids" value="{{ seg.id }}">
+              <span class="form-check-label">
+                #{{ seg.segment_index }}
+                — {{ seg.source.title|default:seg.source.youtube_video_id|truncatechars:48 }}
+                <span class="text-muted">({{ seg.start_seconds }}–{{ seg.end_seconds }}s)</span>
+              </span>
+            </label>
+            {% empty %}
+            <span class="text-muted">{% trans "No live segments in this project." %}</span>
+            {% endfor %}
+          </div>
+          <div class="form-text">{% trans "Checked segments replace the source and limit. Leave unchecked to assign from the source above." %}</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{% trans "Segment limit" %}</label>
+          <input type="number" name="limit" min="1" class="form-control form-control-sm" placeholder="{% trans 'All matching' %}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{% trans "Distribution" %}</label>
+          <select name="distribute" class="form-select form-select-sm">
+            <option value="split">{% trans "Split across annotators" %}</option>
+            <option value="all">{% trans "Every annotator gets every segment" %}</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{% trans "Priority" %}</label>
+          <input type="number" name="priority" value="0" class="form-control form-control-sm">
+        </div>
+        <div class="col-12">
+          <label class="form-label">{% trans "Annotators" %}</label>
+          <div class="d-flex flex-wrap gap-3">
+            {% for m in annotators %}
+            <label class="form-check">
+              <input class="form-check-input" type="checkbox" name="assignee_ids" value="{{ m.user.id }}">
+              <span class="form-check-label">{{ m.user.display_name }}</span>
+            </label>
+            {% empty %}
+            <span class="text-muted">{% trans "Add ANNOTATOR members first." %}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-send"></i> {% trans "Create assignments" %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if workload %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0"><i class="bi bi-people"></i> {% trans "Annotator workload" %}</h2>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "Annotator" %}</th>
+            <th>{% trans "Active" %}</th>
+            <th>{% trans "Assigned" %}</th>
+            <th>{% trans "In progress" %}</th>
+            <th>{% trans "Completed" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in workload %}
+          <tr>
+            <td>{{ row.display_name }}</td>
+            <td>{{ row.active }}</td>
+            <td>{{ row.assigned }}</td>
+            <td>{{ row.in_progress }}</td>
+            <td>{{ row.completed }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <h2 class="h6 mb-0">
+        {% if role == "OWNER" %}{% trans "All assignments" %}{% else %}{% trans "My queue" %}{% endif %}
+      </h2>
+      <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+        <select name="status" class="form-select form-select-sm" style="width:auto">
+          <option value="">{% trans "All statuses" %}</option>
+          <option value="ASSIGNED"{% if status_filter == "ASSIGNED" %} selected{% endif %}>{% trans "Assigned" %}</option>
+          <option value="IN_PROGRESS"{% if status_filter == "IN_PROGRESS" %} selected{% endif %}>{% trans "In progress" %}</option>
+          <option value="COMPLETED"{% if status_filter == "COMPLETED" %} selected{% endif %}>{% trans "Completed" %}</option>
+          <option value="RELEASED"{% if status_filter == "RELEASED" %} selected{% endif %}>{% trans "Released" %}</option>
+        </select>
+        {% if role == "OWNER" %}
+        <select name="assignee" class="form-select form-select-sm" style="width:auto">
+          <option value="">{% trans "All annotators" %}</option>
+          {% for m in annotators %}
+          <option value="{{ m.user.id }}"{% if assignee_filter == m.user.id|stringformat:"s" %} selected{% endif %}>{{ m.user.display_name }}</option>
+          {% endfor %}
+        </select>
+        <select name="source" class="form-select form-select-sm" style="width:auto">
+          <option value="">{% trans "All sources" %}</option>
+          {% for s in sources %}
+          <option value="{{ s.id }}"{% if source_filter == s.id|stringformat:"s" %} selected{% endif %}>{{ s.title|default:s.youtube_video_id }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+        <button type="submit" class="btn btn-sm btn-outline-secondary">{% trans "Filter" %}</button>
+      </form>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>{% trans "Segment" %}</th>
+            {% if role == "OWNER" %}<th>{% trans "Assignee" %}</th>{% endif %}
+            <th>{% trans "Status" %}</th>
+            <th>{% trans "Priority" %}</th>
+            <th>{% trans "Created" %}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in assignments %}
+          <tr>
+            <td>
+              <a href="{% url 'segment-workspace' project.id a.segment_id %}">
+                #{{ a.segment.segment_index }} — {{ a.segment.source.title|default:a.segment.source.youtube_video_id|truncatechars:40 }}
+              </a>
+            </td>
+            {% if role == "OWNER" %}
+            <td>{{ a.assignee.display_name }}</td>
+            {% endif %}
+            <td><span class="badge text-bg-secondary">{{ a.status }}</span></td>
+            <td>{{ a.priority }}</td>
+            <td class="text-muted small">{{ a.created_at|date:"Y-m-d H:i" }}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'segment-workspace' project.id a.segment_id %}">
+                {% trans "Open" %}
+              </a>
+              {% if a.status in active_statuses %}
+              <form method="post" action="?{{ request.GET.urlencode }}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="complete">
+                <input type="hidden" name="assignment_id" value="{{ a.id }}">
+                <button type="submit" class="btn btn-sm btn-outline-success">{% trans "Complete" %}</button>
+              </form>
+              {% endif %}
+              {% if role == "OWNER" and a.status in active_statuses %}
+              <form method="post" action="?{{ request.GET.urlencode }}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="release">
+                <input type="hidden" name="assignment_id" value="{{ a.id }}">
+                <button type="submit" class="btn btn-sm btn-outline-warning">{% trans "Release" %}</button>
+              </form>
+              <form method="post" action="?{{ request.GET.urlencode }}" class="d-inline-flex gap-1 align-items-center ms-1" data-testid="reassign-form" onsubmit="this.querySelector('button').disabled=true">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reassign">
+                <input type="hidden" name="assignment_id" value="{{ a.id }}">
+                <select name="new_assignee_id" class="form-select form-select-sm" required style="width:auto" aria-label="{% trans 'Reassign to' %}">
+                  <option value="">{% trans "Reassign to…" %}</option>
+                  {% for m in annotators %}
+                  {% if m.user.id != a.assignee_id %}
+                  <option value="{{ m.user.id }}">{{ m.user.display_name }}</option>
+                  {% endif %}
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-secondary">{% trans "Reassign" %}</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-muted text-center py-4">{% trans "No assignments yet." %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

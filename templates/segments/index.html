@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% load static i18n yal_badges %}
+{% block title %}{% trans "Segments" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div data-testid="segment-index-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-scissors"></i> {% trans "Segments" %}</h1>
+      <p class="text-muted mb-0 small">
+        {% blocktrans with n=total_count a=annotated_count r=ready_count g=source_group_count %}
+        {{ n }} segment(s) · {{ a }} with active labels · {{ r }} dataset-ready · {{ g }} source(s)
+        {% endblocktrans %}
+      </p>
+    </div>
+    <div class="page-head__actions d-flex flex-wrap gap-2">
+      {% if next_assigned %}
+      <a href="{% url 'segment-workspace' project.id next_assigned.id %}" class="btn btn-sm btn-primary">
+        <i class="bi bi-play-fill"></i> {% trans "Next assigned" %}
+      </a>
+      {% endif %}
+      {% if role == "OWNER" %}
+      <a href="{% url 'source-list' project.id %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-plus-lg"></i> {% trans "Create from source" %}
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="get" class="card border-0 shadow-sm mb-3" data-testid="segment-filters">
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-sm-6 col-lg">
+          <label class="form-label small mb-1" for="filter-source">{% trans "Source" %}</label>
+          <select name="source" id="filter-source" class="form-select form-select-sm">
+            <option value="">{% trans "All sources" %}</option>
+            {% for s in sources %}
+            <option value="{{ s.id }}"{% if source_filter == s.id|stringformat:"s" %} selected{% endif %}>
+              {{ s.title|default:s.youtube_video_id|truncatechars:48 }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-sm-4 col-lg">
+          <label class="form-label small mb-1" for="filter-annotated">{% trans "Labels" %}</label>
+          <select name="annotated" id="filter-annotated" class="form-select form-select-sm">
+            <option value="">{% trans "Any" %}</option>
+            <option value="yes"{% if annotated_filter == "yes" %} selected{% endif %}>{% trans "Has labels" %}</option>
+            <option value="no"{% if annotated_filter == "no" %} selected{% endif %}>{% trans "No labels" %}</option>
+          </select>
+        </div>
+        <div class="col-6 col-sm-4 col-lg">
+          <label class="form-label small mb-1" for="filter-processing">{% trans "Pipeline" %}</label>
+          <select name="processing" id="filter-processing" class="form-select form-select-sm">
+            <option value="">{% trans "Any" %}</option>
+            <option value="PENDING"{% if processing_filter == "PENDING" %} selected{% endif %}>{% trans "Pending" %}</option>
+            <option value="PROCESSING"{% if processing_filter == "PROCESSING" %} selected{% endif %}>{% trans "Processing" %}</option>
+            <option value="COMPLETED"{% if processing_filter == "COMPLETED" %} selected{% endif %}>{% trans "Completed" %}</option>
+            <option value="FAILED"{% if processing_filter == "FAILED" %} selected{% endif %}>{% trans "Failed" %}</option>
+          </select>
+        </div>
+        <div class="col-6 col-sm-4 col-lg">
+          <label class="form-label small mb-1" for="filter-ready">{% trans "Dataset ready" %}</label>
+          <select name="ready" id="filter-ready" class="form-select form-select-sm" data-testid="ready-filter">
+            <option value="">{% trans "Any" %}</option>
+            <option value="yes"{% if ready_filter == "yes" %} selected{% endif %}>{% trans "Ready" %}</option>
+            <option value="no"{% if ready_filter == "no" %} selected{% endif %}>{% trans "Not ready" %}</option>
+          </select>
+        </div>
+        <div class="col-6 col-sm-4 col-lg">
+          <span class="form-label small mb-1 d-block">{% trans "Assignment" %}</span>
+          <div class="form-check mb-0 pt-1">
+            <input class="form-check-input" type="checkbox" name="mine" value="1" id="mine" {% if mine %}checked{% endif %}>
+            <label class="form-check-label small" for="mine">{% trans "Assigned to me" %}</label>
+          </div>
+        </div>
+        <div class="col-12 col-sm-auto col-lg-auto">
+          <div class="d-flex flex-wrap gap-1">
+            <button type="submit" class="btn btn-sm btn-outline-secondary" data-testid="segment-filter-submit">{% trans "Filter" %}</button>
+            {% if source_filter or annotated_filter or processing_filter or ready_filter or mine %}
+            <a href="{% url 'segment-index' project.id %}" class="btn btn-sm btn-link" data-testid="segment-filter-clear">{% trans "Clear" %}</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  {% if source_groups %}
+  <div data-testid="segment-list">
+    {% for group in source_groups %}
+    <div class="card border-0 shadow-sm mb-3" data-testid="source-group">
+      <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          <a class="fw-semibold text-decoration-none" href="{% url 'source-detail' project.id group.source.id %}">
+            <i class="bi bi-youtube text-danger"></i>
+            {{ group.source.title|default:group.source.youtube_video_id }}
+          </a>
+          <div class="text-muted small">
+            {% blocktrans with n=group.segment_count a=group.annotated_count m=group.mine_labeled_count %}
+            {{ n }} segment(s) · {{ a }} with labels · {{ m }} labeled by you
+            {% endblocktrans %}
+          </div>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'source-detail' project.id group.source.id %}">
+          {% trans "Source" %}
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead>
+            <tr>
+              <th style="width:4.5rem">{% trans "Seg" %}</th>
+              <th style="min-width:12rem">{% trans "Transcript" %}</th>
+              <th>{% trans "Labels" %}</th>
+              <th>{% trans "Bounds" %}</th>
+              <th>{% trans "Signals" %}</th>
+              <th>{% trans "Ready" %}</th>
+              <th>{% trans "Pipeline" %}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in group.rows %}
+            {% with segment=row.segment %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-start gap-1">
+                  {% if segment.current_artifact_id %}
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary px-1 py-0 mt-1"
+                    data-play-artifact="{{ segment.current_artifact_id }}"
+                    data-testid="segment-play"
+                    title="{% trans 'Play segment audio' %}"
+                    aria-label="{% trans 'Play segment audio' %}"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-play-fill" aria-hidden="true"></i>
+                  </button>
+                  {% endif %}
+                  <div>
+                    <a href="{% url 'segment-workspace' project.id segment.id %}">
+                      {% blocktrans with n=segment.segment_index %}#{{ n }}{% endblocktrans %}
+                    </a>
+                    <div class="text-muted small">rev {{ segment.definition_revision }}</div>
+                    {% if row.my_assignment_status %}
+                    <div class="small mt-1"><span class="badge text-bg-secondary">{{ row.my_assignment_status }}</span></div>
+                    {% endif %}
+                  </div>
+                </div>
+              </td>
+              <td style="min-width:14rem" data-transcript-cell data-segment-id="{{ segment.id }}">
+                {% if role == "OWNER" and project.status != "ARCHIVED" %}
+                {% with editing=editing_transcript_id|stringformat:"s" %}
+                <div data-transcript-view class="{% if editing == segment.id|stringformat:'s' %}d-none{% endif %}">
+                  {% if segment.transcript %}
+                  <div class="small" data-transcript-text title="{{ segment.transcript }}">{{ segment.transcript|truncatechars:140 }}</div>
+                  {% else %}
+                  <span class="text-muted small" data-transcript-text data-empty="1">{% trans "No transcript" %}</span>
+                  {% endif %}
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 mt-1"
+                    data-transcript-edit
+                    data-testid="transcript-edit"
+                  >
+                    {% if segment.transcript %}{% trans "Edit" %}{% else %}{% trans "+ Text" %}{% endif %}
+                  </button>
+                </div>
+                <form
+                  method="post"
+                  action="?{{ request.GET.urlencode }}"
+                  data-transcript-form
+                  data-testid="transcript-form"
+                  class="{% if editing != segment.id|stringformat:'s' %}d-none{% endif %}"
+                >
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="save_transcript">
+                  <input type="hidden" name="segment_id" value="{{ segment.id }}">
+                  <input type="hidden" name="expected_definition_revision" value="{{ segment.definition_revision }}">
+                  <label class="visually-hidden" for="transcript-{{ segment.id }}">{% trans "Transcript" %}</label>
+                  <textarea
+                    class="form-control form-control-sm"
+                    name="transcript"
+                    id="transcript-{{ segment.id }}"
+                    rows="2"
+                    maxlength="10000"
+                  >{{ segment.transcript|default:'' }}</textarea>
+                  <div class="d-flex flex-wrap gap-1 mt-1">
+                    <button type="submit" class="btn btn-primary btn-sm" data-testid="transcript-save">{% trans "Save" %}</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-transcript-cancel>{% trans "Cancel" %}</button>
+                  </div>
+                </form>
+                {% endwith %}
+                {% else %}
+                  {% if segment.transcript %}
+                  <div class="small" title="{{ segment.transcript }}">{{ segment.transcript|truncatechars:140 }}</div>
+                  {% else %}
+                  <span class="text-muted small">{% trans "No transcript" %}</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td style="min-width:14rem">
+                {% if project.status != "ARCHIVED" and row.chips %}
+                <div class="d-flex flex-wrap gap-1" data-testid="segment-label-chips">
+                  {% for chip in row.chips %}
+                    {% if chip.annotation_id %}
+                    <form method="post" action="?{{ request.GET.urlencode }}" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="remove_annotation">
+                      <input type="hidden" name="annotation_id" value="{{ chip.annotation_id }}">
+                      <button type="submit" class="btn btn-success btn-sm py-0" title="{% trans 'Remove your label' %}">
+                        {{ chip.name }}
+                      </button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="?{{ request.GET.urlencode }}" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="assign_label">
+                      <input type="hidden" name="segment_id" value="{{ segment.id }}">
+                      <input type="hidden" name="label_id" value="{{ chip.label_id }}">
+                      <button type="submit" class="btn btn-outline-primary btn-sm py-0" title="{% trans 'Assign label' %}">
+                        {{ chip.name }}
+                      </button>
+                    </form>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                {% if row.annotator_count %}
+                <div class="text-muted small mt-1">
+                  {% blocktrans count counter=row.annotator_count %}{{ counter }} annotator on segment{% plural %}{{ counter }} annotators on segment{% endblocktrans %}
+                </div>
+                {% endif %}
+                {% elif not row.chips %}
+                <span class="text-muted small">{% trans "No project labels" %}</span>
+                {% else %}
+                <div class="d-flex flex-wrap gap-1">
+                  {% for name in row.label_names %}
+                  <span class="badge text-bg-secondary">{{ name }}</span>
+                  {% empty %}
+                  <span class="text-muted small">{% trans "No labels" %}</span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </td>
+              <td class="text-nowrap small">{{ segment.start_seconds }}s – {{ segment.end_seconds }}s</td>
+              <td class="small">
+                <div class="d-flex flex-wrap gap-1">
+                  {% if row.has_artifact %}
+                  <span class="badge text-bg-light border">{% trans "Audio" %}</span>
+                  {% elif "AUDIO_VALID" in row.readiness_failed_gates %}
+                  <span class="badge rounded-pill text-bg-light border border-warning text-dark">{% trans "Need audio" %}</span>
+                  {% endif %}
+                  {% if row.audio_reviewed %}
+                  <span class="badge text-bg-light border">{% trans "Reviewed" %}</span>
+                  {% elif "AUDIO_REVIEWED" in row.readiness_failed_gates %}
+                  <span class="badge rounded-pill text-bg-light border border-warning text-dark">{% trans "Need review" %}</span>
+                  {% endif %}
+                  {% if row.has_transcript %}
+                  <span class="badge text-bg-light border">{% trans "Text" %}</span>
+                  {% elif "TRANSCRIPT_VALID" in row.readiness_failed_gates %}
+                  <span class="badge rounded-pill text-bg-light border border-warning text-dark">{% trans "Need text" %}</span>
+                  {% endif %}
+                  {% if row.active_annotation_count %}
+                  <span class="badge text-bg-light border">{% trans "Labeled" %}</span>
+                  {% elif "ANNOTATION_VALID" in row.readiness_failed_gates %}
+                  <span class="badge rounded-pill text-bg-light border border-warning text-dark">{% trans "Need label" %}</span>
+                  {% endif %}
+                  {% if row.has_asr %}<span class="badge text-bg-light border">{% trans "ASR" %}</span>{% endif %}
+                </div>
+              </td>
+              <td style="min-width:7.5rem">
+                {% readiness_status row.is_ready row.readiness_failed_gates %}
+              </td>
+              <td>{% status_badge segment.processing_status "processing" %}</td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'segment-workspace' project.id segment.id %}">{% trans "Open" %}</a>
+              </td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info" data-testid="segments-empty">
+    {% if source_filter or annotated_filter or processing_filter or ready_filter or mine %}
+    <h2 class="h5">{% trans "No segments match these filters" %}</h2>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'segment-index' project.id %}">{% trans "Clear filters" %}</a>
+    {% else %}
+    <h2 class="h5">{% trans "No segments yet" %}</h2>
+    <p class="text-muted mb-2">{% trans "Open a source to create a segment (OWNER)." %}</p>
+    <a class="btn btn-primary btn-sm" href="{% url 'source-list' project.id %}">{% trans "View sources" %}</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+<audio id="segment-list-player" preload="none" hidden></audio>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{% static 'js/segment_list_audio.js' %}"></script>
+<script type="module" src="{% static 'js/segment_transcript_edit.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% load i18n %}
+<div class="language-switcher mb-3 d-flex justify-content-end gap-2" role="group" aria-label="{% trans 'Language' %}">
+  <form action="{% url 'set_language' %}" method="post">
+    {% csrf_token %}
+    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+    <button type="submit" name="language" value="vi"
+            class="lang-flag-btn{% if LANGUAGE_CODE == 'vi' %} active{% endif %}"
+            title="Tiếng Việt">
+      🇻🇳
+    </button>
+  </form>
+  <form action="{% url 'set_language' %}" method="post">
+    {% csrf_token %}
+    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+    <button type="submit" name="language" value="en"
+            class="lang-flag-btn{% if LANGUAGE_CODE == 'en' %} active{% endif %}"
+            title="English">
+      🇺🇸
+    </button>
+  </form>
+</div>

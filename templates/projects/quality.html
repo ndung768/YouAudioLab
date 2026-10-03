@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Quality report" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div data-testid="project-quality-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-clipboard-data"></i> {% trans "Quality report" %}</h1>
+      <p class="text-muted mb-0 small">
+        {% trans "Duration histogram and per-video coverage. Splits match default export (by source, seed 42)." %}
+      </p>
+    </div>
+    <div class="page-head__actions">
+      <a href="{% url 'project-quality' project.id %}?format=json" class="btn btn-sm btn-outline-primary" data-testid="quality-json-download">
+        <i class="bi bi-download"></i> {% trans "Download JSON" %}
+      </a>
+      <a href="{% url 'project-progress' project.id %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-graph-up"></i> {% trans "Progress" %}
+      </a>
+    </div>
+  </div>
+
+  <p class="small text-muted mb-4" data-testid="quality-ethics">
+    {% trans "License" %}: <strong>{{ report.project.license|default:"—" }}</strong>
+    · {% trans "Consent" %}: {{ report.project.consent_notes|default:"—" }}
+    · {% trans "Hours" %}: <strong>{{ report.counts.dataset_hours|floatformat:3 }}</strong>
+    · {{ report.counts.sources }} {% trans "sources" %}
+    · {{ report.counts.segments }} {% trans "segments" %}
+  </p>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Ready" %}</div>
+          <div class="fs-4 fw-semibold">{{ report.counts.ready }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Gold" %}</div>
+          <div class="fs-4 fw-semibold">{{ report.counts.gold }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Overlap" %}</div>
+          <div class="fs-4 fw-semibold">{{ report.counts.overlap }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">{% trans "Annotated" %}</div>
+          <div class="fs-4 fw-semibold">{{ report.counts.annotated }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4" data-testid="quality-duration">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0">{% trans "Duration" %}</h2>
+    </div>
+    <div class="card-body">
+      <h3 class="h6 text-muted">{% trans "Overall" %}</h3>
+      <ul class="list-unstyled mb-4">
+        {% for row in report.duration.overall %}
+        <li class="mb-2" data-testid="duration-bucket" data-bucket="{{ row.key }}">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>{{ row.label }}</span>
+            <span class="text-muted">{{ row.segment_count }} · {{ row.hours|floatformat:3 }} h · {{ row.pct_of_hours }}%</span>
+          </div>
+          <div class="progress" style="height: 0.5rem;">
+            <div class="progress-bar bg-secondary" style="width: {{ row.pct_of_hours }}%;"></div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="row g-3">
+        {% for split, rows in report.duration.by_split.items %}
+        <div class="col-md-4">
+          <h3 class="h6 text-muted text-uppercase">{{ split }}</h3>
+          <ul class="list-unstyled mb-0">
+            {% for row in rows %}
+            <li class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>{{ row.label }}</span>
+                <span class="text-muted">{{ row.segment_count }}</span>
+              </div>
+              <div class="progress" style="height: 0.4rem;">
+                <div class="progress-bar bg-secondary" style="width: {{ row.pct_of_hours }}%;"></div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4" data-testid="quality-coverage">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0">{% trans "Per-video coverage" %}</h2>
+    </div>
+    <div class="card-body p-0">
+      {% if coverage_rows %}
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>{% trans "Video" %}</th>
+              <th>{% trans "YouTube" %}</th>
+              <th class="text-end">{% trans "Seg" %}</th>
+              <th class="text-end">{% trans "Hours" %}</th>
+              <th class="text-end">{% trans "Ann." %}</th>
+              <th class="text-end">{% trans "Gold" %}</th>
+              <th class="text-end">{% trans "Overlap" %}</th>
+              <th class="text-end">{% trans "Ready" %}</th>
+              <th>{% trans "Split" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in coverage_rows %}
+            <tr data-testid="coverage-row" data-source-id="{{ row.source_id }}">
+              <td>{{ row.title }}</td>
+              <td class="small text-muted">{{ row.youtube_video_id }}</td>
+              <td class="text-end">{{ row.segment_count }}</td>
+              <td class="text-end">{{ row.hours|floatformat:3 }}</td>
+              <td class="text-end">{{ row.annotated }}</td>
+              <td class="text-end">{{ row.gold }}</td>
+              <td class="text-end">{{ row.overlap }}</td>
+              <td class="text-end">{{ row.ready }}</td>
+              <td>{{ row.split|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if coverage_hidden %}
+      <p class="small text-muted px-3 py-2 mb-0" data-testid="coverage-truncated">
+        {% blocktrans with n=coverage_hidden %}{{ n }} more source(s) in the JSON download.{% endblocktrans %}
+      </p>
+      {% endif %}
+      {% else %}
+      <p class="text-muted text-center py-4 mb-0">{% trans "No sources yet." %}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4" data-testid="quality-iaa">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h2 class="h6 mb-0">{% trans "Agreement" %}</h2>
+      <a href="{% url 'project-progress' project.id %}" class="small">{% trans "Full IAA on Progress" %}</a>
+    </div>
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-6">{% trans "Mean Jaccard" %}</dt>
+        <dd class="col-sm-6">{% if report.iaa.mean_jaccard is not None %}{{ report.iaa.mean_jaccard|floatformat:3 }}{% else %}—{% endif %}</dd>
+        <dt class="col-sm-6">{% trans "Cohen κ" %}</dt>
+        <dd class="col-sm-6">{% if report.iaa.mean_cohen_kappa is not None %}{{ report.iaa.mean_cohen_kappa|floatformat:3 }}{% else %}—{% endif %}</dd>
+        <dt class="col-sm-6">{% trans "Fleiss κ" %}</dt>
+        <dd class="col-sm-6">{% if report.iaa.fleiss_kappa is not None %}{{ report.iaa.fleiss_kappa|floatformat:3 }}{% else %}—{% endif %}</dd>
+        <dt class="col-sm-6">{% trans "Gold segments" %}</dt>
+        <dd class="col-sm-6">{{ report.iaa.gold_segment_count }}</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+{% endblock %}

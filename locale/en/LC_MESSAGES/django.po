@@ -1,0 +1,1533 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: YouAudioLab_Django\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "(you)"
+msgstr ""
+
+msgid ""
+"<strong>No sources yet.</strong> Ask a project OWNER to import a YouTube "
+"URL."
+msgstr ""
+
+msgid "<strong>No sources yet.</strong> Use Add source below."
+msgstr ""
+
+msgid "AI"
+msgstr ""
+
+msgid "AI assist"
+msgstr ""
+
+msgid "AI assist applied."
+msgstr ""
+
+msgid "AI assist candidate ready."
+msgstr ""
+
+msgid "AI preferences"
+msgstr ""
+
+msgid "AI preferences saved."
+msgstr ""
+
+msgid "AI provider disabled."
+msgstr ""
+
+msgid "AI provider is disabled."
+msgstr ""
+
+msgid "ASR"
+msgstr ""
+
+msgid "ASR job queued."
+msgstr ""
+
+msgid "ASR jobs"
+msgstr ""
+
+msgid "ASR preferences"
+msgstr ""
+
+msgid "ASR preferences saved."
+msgstr ""
+
+msgid "ASR runs"
+msgstr ""
+
+msgid "ASR text applied to transcript."
+msgstr ""
+
+msgid "ASR transcript"
+msgstr ""
+
+msgid "Account AI preferences"
+msgstr ""
+
+msgid "Account ASR preferences"
+msgstr ""
+
+msgid "Account created."
+msgstr ""
+
+msgid "Activate"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid ""
+"Active membership. Add people by existing user UUID (Identity / ops "
+"bootstrap)."
+msgstr ""
+
+msgid "Add & fetch"
+msgstr ""
+
+msgid "Add annotation"
+msgstr ""
+
+msgid "Add member"
+msgstr ""
+
+msgid "Add source"
+msgstr ""
+
+msgid "Admin"
+msgstr ""
+
+msgid "Admin defaults for Ollama assists (Gate W8.1)."
+msgstr ""
+
+msgid "Admin defaults for “system defaults” users (Gate W7.3)."
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Annotation assigned."
+msgstr ""
+
+msgid "Annotation removed."
+msgstr ""
+
+msgid "Annotations"
+msgstr ""
+
+msgid "Applied"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "Apply my numbers"
+msgstr ""
+
+msgid "Apply to canonical transcript"
+msgstr ""
+
+msgid "Archive"
+msgstr ""
+
+msgid "Archive project"
+msgstr ""
+
+msgid "Archive this project?"
+msgstr ""
+
+msgid "Archive this project? It remains readable but writes stop."
+msgstr ""
+
+msgid "Archived"
+msgstr ""
+
+msgid "Artifact id"
+msgstr ""
+
+msgid "Ask a project owner to create labels."
+msgstr ""
+
+msgid "Assign a label to create the first episode."
+msgstr ""
+
+msgid "Assign label"
+msgstr ""
+
+msgid "At least 8 characters"
+msgstr ""
+
+msgid "Audio research workspace"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Bounds"
+msgstr ""
+
+msgid ""
+"Bounds are source-relative seconds. OWNER only. Opens Segment Workspace "
+"after create."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cancellation requested."
+msgstr ""
+
+msgid "Cannot revoke your own membership in the UI."
+msgstr ""
+
+msgid "Channel"
+msgstr ""
+
+msgid "Channels"
+msgstr ""
+
+msgid "Choose a login"
+msgstr ""
+
+msgid "Clear stored key"
+msgstr ""
+
+msgid "Clear stored system key"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Color"
+msgstr ""
+
+msgid "Continue to projects"
+msgstr ""
+
+msgid "Create"
+msgstr ""
+
+msgid "Create Segment is unavailable until source duration is known."
+msgstr ""
+
+msgid "Create a taxonomy label to start annotating segments."
+msgstr ""
+
+msgid "Create account"
+msgstr ""
+
+msgid "Create an audio research workspace."
+msgstr ""
+
+msgid "Create label"
+msgstr ""
+
+msgid "Create project"
+msgstr ""
+
+msgid "Create segment"
+msgstr ""
+
+msgid "Create without password"
+msgstr ""
+
+msgid "Created"
+msgstr ""
+
+msgid "Cross-source index for this project (merged from per-source lists)."
+msgstr ""
+
+msgid "Current"
+msgstr ""
+
+msgid "Current artifact"
+msgstr ""
+
+msgid "Current artifact:"
+msgstr ""
+
+msgid "Current audio"
+msgstr ""
+
+msgid "Current job:"
+msgstr ""
+
+msgid "Current system defaults:"
+msgstr ""
+
+msgid "Custom"
+msgstr ""
+
+msgid "Danger zone"
+msgstr ""
+
+msgid "Deactivate"
+msgstr ""
+
+msgid "Deactivating blocks new assignments; historical episodes remain."
+msgstr ""
+
+msgid "Default model"
+msgstr ""
+
+msgid "Definition"
+msgstr ""
+
+msgid "Definition revision:"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Detail"
+msgstr ""
+
+msgid "Device / compute"
+msgstr ""
+
+msgid "Discard draft"
+msgstr ""
+
+msgid "Display name"
+msgstr ""
+
+msgid "Download WAV"
+msgstr ""
+
+msgid "Download is available after the artifact is verified."
+msgstr ""
+
+msgid "Duplicate video ids in this project return a conflict."
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Duration unknown"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "Effective:"
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "Encoding"
+msgstr ""
+
+msgid "End"
+msgstr ""
+
+msgid "Enter your login"
+msgstr ""
+
+msgid "Enter your password"
+msgstr ""
+
+msgid "Everyone"
+msgstr ""
+
+msgid "Filter"
+msgstr ""
+
+msgid "Format"
+msgstr ""
+
+msgid "From job"
+msgstr ""
+
+msgid ""
+"Gate 0 D1 (ahead of React F6): project becomes ARCHIVED. Writes stop; "
+"research metadata remains."
+msgstr ""
+
+msgid ""
+"Generate a machine transcript for the current verified artifact. Apply "
+"copies text into the canonical transcript (no revision bump)."
+msgstr ""
+
+msgid "Generate transcript"
+msgstr ""
+
+msgid "HTML5 player — no waveform in MVP."
+msgstr ""
+
+msgid "Historical only — never current"
+msgstr ""
+
+msgid "History (removed)"
+msgstr ""
+
+msgid "Identity cleared."
+msgstr ""
+
+msgid "Identity created."
+msgstr ""
+
+msgid "Identity selected."
+msgstr ""
+
+msgid "Import"
+msgstr ""
+
+msgid "Import is OWNER-only. New sources start as Metadata pending."
+msgstr ""
+
+msgid "Import source"
+msgstr ""
+
+msgid "Inactive"
+msgstr ""
+
+msgid "Inactive in taxonomy"
+msgstr ""
+
+msgid "Invalid form values."
+msgstr ""
+
+msgid "Invalid label values."
+msgstr ""
+
+msgid "Invalid segment bounds."
+msgstr ""
+
+msgid "Invalid settings values."
+msgstr ""
+
+msgid ""
+"Jobs extract audio for a specific definition revision. Polling runs while "
+"queued or running. Retry creates a new job id."
+msgstr ""
+
+msgid "Label activated."
+msgstr ""
+
+msgid "Label created."
+msgstr ""
+
+msgid "Label deactivated."
+msgstr ""
+
+msgid "Label saved."
+msgstr ""
+
+msgid "Labels"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Legacy bootstrap (development)"
+msgstr ""
+
+msgid "Local compute type"
+msgstr ""
+
+msgid "Local device"
+msgstr ""
+
+msgid "Local draft was kept."
+msgstr ""
+
+msgid "Local model"
+msgstr ""
+
+msgid "Login"
+msgstr ""
+
+msgid "Login identifier"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Loudness normalization"
+msgstr ""
+
+msgid "Member added."
+msgstr ""
+
+msgid "Member revoked."
+msgstr ""
+
+msgid "Members"
+msgstr ""
+
+msgid "Metadata fetch failed — try Refresh metadata."
+msgstr ""
+
+msgid "Metadata is still pending."
+msgstr ""
+
+msgid "Metadata refresh queued."
+msgstr ""
+
+msgid "Mine"
+msgstr ""
+
+msgid "Model"
+msgstr ""
+
+msgid "Model B: each row is one annotation episode"
+msgstr ""
+
+msgid "Model:"
+msgstr ""
+
+msgid "My Projects"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Name (required)"
+msgstr ""
+
+msgid "Naming convention"
+msgstr ""
+
+msgid "Need a transcript first."
+msgstr ""
+
+msgid "New Project"
+msgstr ""
+
+msgid "No AI assist candidates yet."
+msgstr ""
+
+msgid "No ASR runs yet."
+msgstr ""
+
+msgid "No active annotations"
+msgstr ""
+
+msgid "No active labels in this project."
+msgstr ""
+
+msgid "No active members"
+msgstr ""
+
+msgid "No description"
+msgstr ""
+
+msgid "No jobs yet"
+msgstr ""
+
+msgid "No jobs yet."
+msgstr ""
+
+msgid "No labels"
+msgstr ""
+
+msgid "No processing jobs have been submitted for this segment."
+msgstr ""
+
+msgid "No segments on this source yet."
+msgstr ""
+
+msgid "No segments yet"
+msgstr ""
+
+msgid "No sources yet."
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "Ollama URL"
+msgstr ""
+
+msgid "Ollama base URL"
+msgstr ""
+
+msgid ""
+"Ollama candidates for cleanup, labels, and metadata. Nothing writes until "
+"you Apply. This is not ASR."
+msgstr ""
+
+msgid "Ollama model"
+msgstr ""
+
+msgid "Ollama settings for assist features (Gate W8.1)."
+msgstr ""
+
+msgid "On"
+msgstr ""
+
+msgid "Only AI admins can update system defaults."
+msgstr ""
+
+msgid "Only ASR admins can update system defaults."
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Open a source to create a segment (OWNER)."
+msgstr ""
+
+msgid "Open on YouTube"
+msgstr ""
+
+msgid "OpenAI"
+msgstr ""
+
+msgid "OpenAI API key"
+msgstr ""
+
+msgid "OpenAI base URL"
+msgstr ""
+
+msgid "OpenAI default model"
+msgstr ""
+
+msgid "OpenAI enabled"
+msgstr ""
+
+msgid "OpenAI model"
+msgstr ""
+
+msgid "OpenAI system key:"
+msgstr ""
+
+msgid "Output format"
+msgstr ""
+
+msgid "Override provider/model for this job"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "Paste a user UUID that already exists. Default role is ANNOTATOR."
+msgstr ""
+
+msgid "Preferences"
+msgstr ""
+
+msgid "Primary"
+msgstr ""
+
+msgid "Processing"
+msgstr ""
+
+msgid "Processing defaults"
+msgstr ""
+
+msgid ""
+"Processing defaults (Gate 0 D4: WAV / PCM / 16 kHz / mono / loudness off)."
+msgstr ""
+
+msgid "Processing job queued."
+msgstr ""
+
+msgid "Project archived."
+msgstr ""
+
+msgid "Project created."
+msgstr ""
+
+msgid "Project navigation"
+msgstr ""
+
+msgid ""
+"Project taxonomy for Model B annotations. Deactivating blocks new "
+"assignments; history remains."
+msgstr ""
+
+msgid "Projects"
+msgstr ""
+
+msgid "Provider"
+msgstr ""
+
+msgid "Provider:"
+msgstr ""
+
+msgid "Quick import"
+msgstr ""
+
+msgid "Read-only for ANNOTATOR."
+msgstr ""
+
+msgid "Read-only — OWNER required to edit bounds."
+msgstr ""
+
+msgid "Read-only: only project owners can add or revoke members."
+msgstr ""
+
+msgid "Read-only: only project owners can change settings."
+msgstr ""
+
+msgid "Read-only: only project owners can create, edit, or activate labels."
+msgstr ""
+
+msgid "Read-only: only project owners can generate or apply ASR."
+msgstr ""
+
+msgid "Read-only: only project owners can submit, cancel, or retry jobs."
+msgstr ""
+
+msgid "Read-only: only project owners can suggest or apply AI assists."
+msgstr ""
+
+msgid "Read-only: you are not an AI admin in this environment."
+msgstr ""
+
+msgid "Read-only: you are not an ASR admin in this environment."
+msgstr ""
+
+msgid "Recent jobs"
+msgstr ""
+
+msgid "Refresh metadata"
+msgstr ""
+
+msgid "Register"
+msgstr ""
+
+msgid "Remove"
+msgstr ""
+
+msgid "Removed"
+msgstr ""
+
+msgid "Request cancellation"
+msgstr ""
+
+msgid "Reset to environment"
+msgstr ""
+
+msgid "Resolve / sanity check"
+msgstr ""
+
+msgid "Retry"
+msgstr ""
+
+msgid "Retry queued."
+msgstr ""
+
+msgid "Reused equivalent ASR result."
+msgstr ""
+
+msgid "Rev"
+msgstr ""
+
+msgid "Revision"
+msgstr ""
+
+msgid "Revision conflict"
+msgstr ""
+
+msgid "Revoke"
+msgstr ""
+
+msgid "Role"
+msgstr ""
+
+msgid "Run again"
+msgstr ""
+
+msgid "Sample rate (Hz)"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save definition"
+msgstr ""
+
+msgid "Save preferences"
+msgstr ""
+
+msgid "Save settings"
+msgstr ""
+
+msgid "Save system defaults"
+msgstr ""
+
+msgid "Save transcript"
+msgstr ""
+
+msgid "Saved."
+msgstr ""
+
+msgid "Scope"
+msgstr ""
+
+msgid "Segment"
+msgstr ""
+
+msgid "Segment #%(n)s"
+msgstr ""
+
+msgid "Segment created."
+msgstr ""
+
+msgid "Segment deleted."
+msgstr ""
+
+msgid "Segment not found"
+msgstr ""
+
+msgid "Segments"
+msgstr ""
+
+msgid "Select a label…"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Settings saved. Existing jobs keep their snapshots."
+msgstr ""
+
+msgid "Show password"
+msgstr ""
+
+msgid "Show removed history"
+msgstr ""
+
+msgid "Sign in"
+msgstr ""
+
+msgid "Signed in as <strong>%(name)s</strong>"
+msgstr ""
+
+msgid "Signed in."
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Soft-delete segment"
+msgstr ""
+
+msgid "Soft-delete this segment? It can remain in history lists later."
+msgstr ""
+
+msgid "Sort order"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid "Source detail"
+msgstr ""
+
+msgid "Source duration:"
+msgstr ""
+
+msgid "Source:"
+msgstr ""
+
+msgid "Sources"
+msgstr ""
+
+msgid "Stale"
+msgstr ""
+
+msgid "Stale — not applicable"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Submit a job to extract audio for the current revision."
+msgstr ""
+
+msgid "Submit an extract job first — ASR needs a verified audio artifact."
+msgstr ""
+
+msgid "Submit job"
+msgstr ""
+
+msgid "Suggest cleanup"
+msgstr ""
+
+msgid "Suggest labels"
+msgstr ""
+
+msgid "Suggest metadata"
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "System AI"
+msgstr ""
+
+msgid "System AI admin"
+msgstr ""
+
+msgid "System AI defaults"
+msgstr ""
+
+msgid "System AI defaults saved."
+msgstr ""
+
+msgid "System AI reset to environment defaults."
+msgstr ""
+
+msgid "System ASR"
+msgstr ""
+
+msgid "System ASR admin"
+msgstr ""
+
+msgid "System ASR defaults"
+msgstr ""
+
+msgid "System ASR defaults saved."
+msgstr ""
+
+msgid "System ASR reset to environment defaults."
+msgstr ""
+
+msgid "System OpenAI API key"
+msgstr ""
+
+msgid "System defaults or custom provider settings (Gate W7.1)."
+msgstr ""
+
+msgid "System:"
+msgstr ""
+
+msgid "Test connection / resolve"
+msgstr ""
+
+msgid "The server rejected"
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Transcript"
+msgstr ""
+
+msgid "Transcript saved."
+msgstr ""
+
+msgid "Unexpected empty membership list for this project."
+msgstr ""
+
+msgid "Unknown or inactive user"
+msgstr ""
+
+msgid "Unverified"
+msgstr ""
+
+msgid "Updated"
+msgstr ""
+
+msgid "Use Download WAV on the audio player above."
+msgstr ""
+
+msgid "Use system defaults"
+msgstr ""
+
+msgid "Use this identity"
+msgstr ""
+
+msgid "User"
+msgstr ""
+
+msgid "User UUID"
+msgstr ""
+
+msgid "User id (required)"
+msgstr ""
+
+msgid "Verified"
+msgstr ""
+
+msgid "View all project segments"
+msgstr ""
+
+msgid "View sources"
+msgstr ""
+
+msgid "Wait for the active job to finish."
+msgstr ""
+
+msgid "Workspace"
+msgstr ""
+
+msgid ""
+"You don't have any projects yet. Click <strong>New Project</strong> to get "
+"started."
+msgstr ""
+
+msgid "You have no active annotations on this segment."
+msgstr ""
+
+msgid "YouAudioLab · Gate A1 identity"
+msgstr ""
+
+msgid "YouTube URL"
+msgstr ""
+
+msgid ""
+"Your local draft was preserved. Choose Apply or Discard — nothing was "
+"written to the server."
+msgstr ""
+
+msgid "Your name"
+msgstr ""
+
+msgid "configured"
+msgstr ""
+
+msgid "disabled"
+msgstr ""
+
+msgid "enabled"
+msgstr ""
+
+msgid "no"
+msgstr ""
+
+msgid "not set"
+msgstr ""
+
+msgid "optional"
+msgstr ""
+
+msgid "source(s) in this project."
+msgstr ""
+
+msgid "unknown"
+msgstr ""
+
+msgid "yes"
+msgstr ""
+
+msgid "•••• configured"
+msgstr ""
+
+msgid "← Back to segments"
+msgstr ""
+
+msgid "%(fmt)s · %(rate)s Hz · %(channels)s ch"
+msgstr ""
+
+msgid "%(n)s bytes"
+msgstr ""
+
+msgid "(segment now %(cur)s)"
+msgstr ""
+
+msgid "An active job already exists for this segment."
+msgstr ""
+
+msgid "Annotator %(id)s"
+msgstr ""
+
+msgid "Annotator %(who)s"
+msgstr ""
+
+msgid "Artifact exists but is not verified yet."
+msgstr ""
+
+msgid "Cancellation requested…"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Could not load artifact audio."
+msgstr ""
+
+msgid ""
+"Create labels on the <a href=\"%(labels_url)s\">Labels</a> screen (F6), or "
+"via API."
+msgstr ""
+
+msgid "Create labels on the Labels screen (F6), or via API."
+msgstr ""
+
+msgid "Current server revision is <strong>%(cur)s</strong>."
+msgstr ""
+
+msgid "Duration %(d)s"
+msgstr ""
+
+msgid "Duration %(d)ss"
+msgstr ""
+
+msgid "Edit \"%(name)s\""
+msgstr ""
+
+msgid "Edit “%(name)s”"
+msgstr ""
+
+msgid "Enter a valid user UUID (X-User-Id)."
+msgstr ""
+
+msgid "Failed"
+msgstr ""
+
+msgid "Format %(fmt)s"
+msgstr ""
+
+msgid "Loading audio…"
+msgstr ""
+
+msgid "Metadata failed"
+msgstr ""
+
+msgid "Metadata pending"
+msgstr ""
+
+msgid ""
+"No current audio artifact for definition revision %(n)s. Submit a processing"
+" job to produce one."
+msgstr ""
+
+msgid ""
+"No current audio artifact for definition revision %(rev)s. Submit a "
+"processing job to produce one."
+msgstr ""
+
+msgid "Out of date"
+msgstr ""
+
+msgid "Peers can share the same label. Re-assign after remove creates a"
+msgstr ""
+
+msgid ""
+"Peers can share the same label. Re-assign after remove creates a "
+"<strong>new</strong> episode."
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Queued"
+msgstr ""
+
+msgid "Ready"
+msgstr ""
+
+msgid ""
+"Remove annotation episode for “%(name)s”? Re-assigning later creates a new "
+"episode id."
+msgstr ""
+
+msgid "Revoke membership for %(who)s…? Historical annotations are kept."
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Server bounds: %(a)ss – %(b)ss · Your draft: %(c)ss – %(d)ss"
+msgstr ""
+
+msgid "Server bounds: %(s)ss – %(e)ss"
+msgstr ""
+
+msgid "Size %(n)s bytes"
+msgstr ""
+
+msgid ""
+"Someone else updated this segment (now revision %(current)s). Your save was "
+"not applied."
+msgstr ""
+
+msgid "Someone else updated this segment. Your save was not applied."
+msgstr ""
+
+msgid "Source imported (metadata pending). Fetch queued."
+msgstr ""
+
+msgid "Succeeded"
+msgstr ""
+
+msgid "That label is inactive. Choose an active label."
+msgstr ""
+
+msgid "This project is archived and cannot be modified."
+msgstr ""
+
+msgid "This segment was soft-deleted."
+msgstr ""
+
+msgid "This source already exists in the project."
+msgstr ""
+
+msgid "You (%(name)s)"
+msgstr ""
+
+msgid "Your draft: %(s)ss – %(e)ss"
+msgstr ""
+
+msgid "attempt %(n)s"
+msgstr ""
+
+msgid "bytes"
+msgstr ""
+
+msgid "created %(when)s"
+msgstr ""
+
+msgid "episode."
+msgstr ""
+
+msgid "local %(model)s"
+msgstr ""
+
+msgid "new"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+msgid "removed %(when)s"
+msgstr ""
+
+msgid "rev %(n)s"
+msgstr ""
+
+msgid "rev %(r)s"
+msgstr ""
+
+msgid "sort %(n)s"
+msgstr ""
+
+msgid "%(n)s source"
+msgid_plural "%(n)s sources"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "%(n)s segment"
+msgid_plural "%(n)s segments"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Workspace overview"
+msgstr ""
+
+msgid "Manage YouTube sources, segments, ASR and annotations in one place."
+msgstr ""
+
+msgid "Owned"
+msgstr ""
+
+msgid "Joined"
+msgstr ""
+
+msgid "Total shown"
+msgstr ""
+
+msgid "Owned projects"
+msgstr ""
+
+msgid "You manage project settings, sources, and processing."
+msgstr ""
+
+msgid "Owner"
+msgstr ""
+
+msgid "Joined projects"
+msgstr ""
+
+msgid "Projects you annotate in but do not manage."
+msgstr ""
+
+msgid "Participant"
+msgstr ""
+
+msgid ""
+"You don't own any projects yet. Click <strong>New Project</strong> to get "
+"started."
+msgstr ""
+
+msgid "You are not participating in any projects."
+msgstr ""
+
+msgid "Account"
+msgstr ""
+
+msgid "Account profile and ASR / AI provider configuration."
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Add new label"
+msgstr ""
+
+msgid "Create a label in one of your projects to start annotating segments."
+msgstr ""
+
+msgid "Join or create a project to see labels here."
+msgstr ""
+
+msgid "Label name"
+msgstr ""
+
+msgid ""
+"Labels across projects you belong to. Edit and manage labels in projects you"
+" own."
+msgstr ""
+
+msgid "No labels yet"
+msgstr ""
+
+msgid ""
+"Note: You can only edit or deactivate labels in projects you own. Labels "
+"with active annotations remain in history when deactivated."
+msgstr ""
+
+msgid "Profile"
+msgstr ""
+
+msgid "Project"
+msgstr ""
+
+msgid "Settings sections"
+msgstr ""
+
+msgid "Usage count"
+msgstr ""
+
+msgid ""
+"Use the ASR and AI tabs to configure transcription and assist providers for "
+"your workspace."
+msgstr ""
+
+msgid "User id"
+msgstr ""
+
+msgid "Your labels"
+msgstr ""
+
+msgid "in use"
+msgstr ""
+
+msgid "Active label in project"
+msgstr ""
+
+msgid "Active labels in project"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid ""
+"All active catalog labels are already in this project, or your catalog is "
+"empty."
+msgstr ""
+
+msgid "Available label"
+msgstr ""
+
+msgid "Available labels"
+msgstr ""
+
+msgid "Catalog"
+msgstr ""
+
+msgid "Color override"
+msgstr ""
+
+msgid "Create label in catalog and add here"
+msgstr ""
+
+msgid ""
+"Create labels here, then assign them to projects from project label "
+"settings."
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Delete this label from your catalog?"
+msgstr ""
+
+msgid "Description override"
+msgstr ""
+
+msgid "Display name override"
+msgstr ""
+
+msgid "Inactive in catalog"
+msgstr ""
+
+msgid "Label added to project."
+msgstr ""
+
+msgid "Label created and added to project."
+msgstr ""
+
+msgid "Label deleted."
+msgstr ""
+
+msgid "Label removed from project."
+msgstr ""
+
+msgid "Label settings"
+msgstr ""
+
+msgid "Manage labels from your catalog (project owner) for this project."
+msgstr ""
+
+msgid "No labels added to this project yet."
+msgstr ""
+
+msgid ""
+"Note: Deactivating a label hides it from “available labels” when adding to "
+"new projects. Labels already assigned to projects stay usable. Labels in use"
+" cannot be deleted."
+msgstr ""
+
+msgid ""
+"Personal label catalog. Assign labels to projects from each project's label "
+"settings."
+msgstr ""
+
+msgid "Read-only: only project owners can add or remove project labels."
+msgstr ""
+
+msgid "Remove from project"
+msgstr ""
+
+msgid ""
+"Remove this label from the project? Existing annotations keep their history."
+msgstr ""
+
+msgid "Used in %(n)s annotation episode(s)"
+msgstr ""
+
+msgid "%(n)s segment(s)"
+msgstr ""
+
+msgid "ASR active"
+msgstr ""
+
+msgid "Active (queued/running)"
+msgstr ""
+
+msgid "Active annotation episodes"
+msgstr ""
+
+msgid "Active jobs"
+msgstr ""
+
+msgid "Active members"
+msgstr ""
+
+msgid "Add YouTube source"
+msgstr ""
+
+msgid "All segments"
+msgstr ""
+
+msgid "Annotated"
+msgstr ""
+
+msgid "Annotation summary"
+msgstr ""
+
+msgid "Annotator"
+msgstr ""
+
+msgid "Annotator productivity"
+msgstr ""
+
+msgid "Archive stops writes; research metadata remains readable."
+msgstr ""
+
+msgid "Audio pipeline and annotation metrics for this project."
+msgstr ""
+
+msgid "Continue labeling"
+msgstr ""
+
+msgid "Edit settings"
+msgstr ""
+
+msgid "Episodes"
+msgstr ""
+
+msgid "Extract audio active"
+msgstr ""
+
+msgid "Failed jobs"
+msgstr ""
+
+msgid "Import a YouTube source and create segments before labeling."
+msgstr ""
+
+msgid "Manage members"
+msgstr ""
+
+msgid "No annotations yet."
+msgstr ""
+
+msgid "No segments yet."
+msgstr ""
+
+msgid "Open workspace"
+msgstr ""
+
+msgid "Processing jobs"
+msgstr ""
+
+msgid "Progress"
+msgstr ""
+
+msgid "Project labels"
+msgstr ""
+
+msgid "Project labels assigned"
+msgstr ""
+
+msgid "Quick overview"
+msgstr ""
+
+msgid ""
+"Segment #%(idx)s — open the workspace to assign labels, run ASR, and review "
+"audio."
+msgstr ""
+
+msgid "Segment processing status"
+msgstr ""
+
+msgid "Team"
+msgstr ""
+
+msgid "View all"
+msgstr ""
+
+msgid "View progress dashboard"
+msgstr ""
+
+msgid "With artifact"
+msgstr ""
+
+msgid "With transcript"
+msgstr ""
+
+msgid "%(n)s active member in this project."
+msgstr ""
+
+msgid "%(n)s active members in this project."
+msgstr ""

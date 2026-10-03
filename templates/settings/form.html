@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% load i18n yal_badges %}
+{% block title %}{% trans "Project settings" %} — {{ project.name }}{% endblock %}
+{% block content %}
+<div data-testid="project-settings-page">
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1"><i class="bi bi-sliders"></i> {% trans "Project settings" %}</h1>
+      <p class="text-muted mb-1 small">
+        {% trans "Corpus protocol for this project: readiness gates, blind labeling, license, and ASR/AI defaults. API keys stay in account Settings." %}
+      </p>
+      <p class="mb-0">{% status_badge project.status "project" %}</p>
+    </div>
+    <div class="page-head__actions">
+      {% if role == "OWNER" %}
+      <a href="{% url 'project-quality' project.id %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-clipboard-data"></i> {% trans "Quality report" %}
+      </a>
+      <a href="{% url 'project-export' project.id %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-download"></i> {% trans "Export" %}
+      </a>
+      {% endif %}
+      <a href="{% url 'account-settings' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-person-gear"></i> {% trans "Account settings" %}
+      </a>
+    </div>
+  </div>
+
+{% if role != "OWNER" %}
+<p class="alert alert-secondary" role="status">
+  {% trans "Read-only: only project owners can change settings." %}
+</p>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">{% trans "Audio processing" %}</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5">{% trans "Format" %}</dt><dd class="col-sm-7">{{ settings.output_format }} / {{ settings.encoding }}</dd>
+          <dt class="col-sm-5">{% trans "Sample rate" %}</dt><dd class="col-sm-7">{{ settings.sample_rate_hz }} Hz · {{ settings.channels }} {% trans "ch" %}</dd>
+          <dt class="col-sm-5">{% trans "Loudness" %}</dt><dd class="col-sm-7">{% if settings.loudness_normalization %}{% trans "On" %}{% else %}{% trans "Off" %}{% endif %}</dd>
+          <dt class="col-sm-5">{% trans "Naming" %}</dt><dd class="col-sm-7">{{ settings.naming_convention|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">{% trans "Readiness & protocol" %}</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5">{% trans "Audio OK" %}</dt><dd class="col-sm-7">{% if settings.require_audio_review %}{% trans "Required" %}{% else %}{% trans "Optional" %}{% endif %}</dd>
+          <dt class="col-sm-5">{% trans "Transcript" %}</dt><dd class="col-sm-7">{% if settings.require_transcript %}{% trans "Required" %}{% else %}{% trans "Optional" %}{% endif %}</dd>
+          <dt class="col-sm-5">{% trans "Annotation" %}</dt><dd class="col-sm-7">{% if settings.require_annotation %}{% trans "Required" %}{% else %}{% trans "Optional" %}{% endif %}</dd>
+          <dt class="col-sm-5">{% trans "Blind annotators" %}</dt><dd class="col-sm-7">{% if settings.blind_annotators %}{% trans "On" %}{% else %}{% trans "Off" %}{% endif %}</dd>
+          <dt class="col-sm-5">{% trans "License" %}</dt><dd class="col-sm-7">{{ project.license|default:"—" }}</dd>
+          <dt class="col-sm-5">{% trans "Consent" %}</dt><dd class="col-sm-7">{{ project.consent_notes|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<form method="post" data-testid="project-settings-form">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="save_settings">
+
+  {% if project.status != "ARCHIVED" %}
+  <div class="settings-savebar sticky-top mb-3">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <p class="small text-muted mb-0">{% trans "Saving does not redo finished extract/ASR jobs." %}</p>
+      <button class="btn btn-primary" type="submit" data-testid="save-project-settings">{% trans "Save settings" %}</button>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100" data-testid="settings-audio-card">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0">{% trans "Audio processing" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">{% trans "Defaults for new extract jobs. Typical research cut: WAV, PCM, 16 kHz, mono." %}</p>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label" for="output_format">{% trans "Format" %}</label>
+              <select class="form-select" name="output_format" id="output_format" {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+                <option value="WAV" {% if settings.output_format == "WAV" %}selected{% endif %}>WAV</option>
+                <option value="FLAC" {% if settings.output_format == "FLAC" %}selected{% endif %}>FLAC</option>
+                {% if settings.output_format and settings.output_format != "WAV" and settings.output_format != "FLAC" %}
+                <option value="{{ settings.output_format }}" selected>{{ settings.output_format }}</option>
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="encoding">{% trans "Encoding" %}</label>
+              <select class="form-select" name="encoding" id="encoding" {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+                <option value="PCM" {% if settings.encoding == "PCM" %}selected{% endif %}>PCM</option>
+                {% if settings.encoding and settings.encoding != "PCM" %}
+                <option value="{{ settings.encoding }}" selected>{{ settings.encoding }}</option>
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="sample_rate_hz">{% trans "Sample rate" %}</label>
+              <select class="form-select" name="sample_rate_hz" id="sample_rate_hz" {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+                <option value="16000" {% if settings.sample_rate_hz == 16000 %}selected{% endif %}>16 kHz</option>
+                <option value="22050" {% if settings.sample_rate_hz == 22050 %}selected{% endif %}>22.05 kHz</option>
+                <option value="44100" {% if settings.sample_rate_hz == 44100 %}selected{% endif %}>44.1 kHz</option>
+                <option value="48000" {% if settings.sample_rate_hz == 48000 %}selected{% endif %}>48 kHz</option>
+                {% if settings.sample_rate_hz and settings.sample_rate_hz != 16000 and settings.sample_rate_hz != 22050 and settings.sample_rate_hz != 44100 and settings.sample_rate_hz != 48000 %}
+                <option value="{{ settings.sample_rate_hz }}" selected>{{ settings.sample_rate_hz }} Hz</option>
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="channels">{% trans "Channels" %}</label>
+              <select class="form-select" name="channels" id="channels" {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+                <option value="1" {% if settings.channels == 1 %}selected{% endif %}>{% trans "Mono" %}</option>
+                <option value="2" {% if settings.channels == 2 %}selected{% endif %}>{% trans "Stereo" %}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" name="loudness_normalization" id="loudness" {% if settings.loudness_normalization %}checked{% endif %} {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+            <label class="form-check-label" for="loudness">{% trans "Loudness normalization" %}</label>
+          </div>
+          <div class="mt-2">
+            <label class="form-label" for="naming_convention">{% trans "File naming convention" %}</label>
+            <input class="form-control" name="naming_convention" id="naming_convention" value="{{ settings.naming_convention|default:'' }}" {% if project.status == "ARCHIVED" %}readonly{% endif %}>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100" data-testid="settings-readiness-card">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0">{% trans "Dataset readiness" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">{% trans "Which segments count as READY on Progress, Quality, and ready-only export." %}</p>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="require_audio_review" id="req-review" {% if settings.require_audio_review %}checked{% endif %} {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+            <label class="form-check-label" for="req-review">{% trans "Require Audio OK review" %}</label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="require_transcript" id="req-transcript" {% if settings.require_transcript %}checked{% endif %} {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+            <label class="form-check-label" for="req-transcript">{% trans "Require canonical transcript" %}</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="require_annotation" id="req-annotation" {% if settings.require_annotation %}checked{% endif %} {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+            <label class="form-check-label" for="req-annotation">{% trans "Require at least one active annotation" %}</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card border-0 shadow-sm" data-testid="settings-protocol-card">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0">{% trans "Annotation protocol & ethics" %}</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="blind_annotators" id="blind-annotators" data-testid="blind-annotators" {% if settings.blind_annotators %}checked{% endif %} {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+            <label class="form-check-label" for="blind-annotators">{% trans "Hide peer labels from annotators (blind)" %}</label>
+          </div>
+          <p class="small text-muted">{% trans "Owners always see every episode. Turn this off only for open review or training." %}</p>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label" for="license">{% trans "License" %}</label>
+              <input class="form-control" name="license" id="license" data-testid="project-license" value="{{ project.license|default:'' }}" placeholder="CC-BY-4.0 · research-only" {% if project.status == "ARCHIVED" %}readonly{% endif %}>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label" for="consent_notes">{% trans "Consent / ethics notes" %}</label>
+              <textarea class="form-control" name="consent_notes" id="consent_notes" rows="2" data-testid="project-consent" {% if project.status == "ARCHIVED" %}readonly{% endif %}>{{ project.consent_notes|default:'' }}</textarea>
+            </div>
+          </div>
+          <p class="form-text mb-0">
+            {% trans "License and consent appear on Export and the Quality report. Do not paste secrets." %}
+            <a href="{% url 'project-export' project.id %}">{% trans "Open export" %}</a>
+            ·
+            <a href="{% url 'project-quality' project.id %}">{% trans "Open quality report" %}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100" data-testid="settings-asr-card">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0">{% trans "ASR (this project)" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">
+            {% trans "Used when generating a transcript. Empty provider inherits account/system ASR. Keys stay in" %}
+            <a href="{% url 'account-settings' %}">{% trans "account Settings" %}</a>.
+          </p>
+          <div class="mb-2">
+            <label class="form-label" for="asr_provider">{% trans "Provider" %}</label>
+            <select class="form-select" name="asr_provider" id="asr_provider" {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+              <option value="" {% if not settings.asr_provider %}selected{% endif %}>{% trans "Inherit account/system" %}</option>
+              <option value="local" {% if settings.asr_provider == "local" %}selected{% endif %}>local</option>
+              <option value="openai" {% if settings.asr_provider == "openai" %}selected{% endif %}>openai</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="asr_model">{% trans "Model" %}</label>
+            <input class="form-control" name="asr_model" id="asr_model" value="{{ settings.asr_model|default:'' }}" placeholder="base · gpt-4o-mini-transcribe · whisper-1" {% if project.status == "ARCHIVED" %}readonly{% endif %}>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100" data-testid="settings-ai-card">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0">{% trans "AI assist (this project)" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">{% trans "Suggest cleanup / labels / metadata. Inherit leaves system AI defaults." %}</p>
+          <div class="mb-2">
+            <label class="form-label" for="ai_enabled">{% trans "Enabled" %}</label>
+            <select class="form-select" name="ai_enabled" id="ai_enabled" {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+              <option value="" {% if settings.ai_enabled is None %}selected{% endif %}>{% trans "Inherit system" %}</option>
+              <option value="on" {% if settings.ai_enabled %}selected{% endif %}>{% trans "enabled" %}</option>
+              <option value="off" {% if settings.ai_enabled == False %}selected{% endif %}>{% trans "disabled" %}</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="ai_provider">{% trans "Provider" %}</label>
+            <select class="form-select" name="ai_provider" id="ai_provider" {% if project.status == "ARCHIVED" %}disabled{% endif %}>
+              <option value="" {% if not settings.ai_provider %}selected{% endif %}>{% trans "Inherit" %}</option>
+              <option value="ollama" {% if settings.ai_provider == "ollama" %}selected{% endif %}>ollama</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label" for="ai_ollama_base_url">{% trans "Ollama base URL" %}</label>
+            <input class="form-control" name="ai_ollama_base_url" id="ai_ollama_base_url" value="{{ settings.ai_ollama_base_url|default:'' }}" placeholder="http://127.0.0.1:11434" {% if project.status == "ARCHIVED" %}readonly{% endif %}>
+          </div>
+          <div>
+            <label class="form-label" for="ai_ollama_model">{% trans "Ollama model" %}</label>
+            <input class="form-control" name="ai_ollama_model" id="ai_ollama_model" value="{{ settings.ai_ollama_model|default:'' }}" placeholder="llama3.2" {% if project.status == "ARCHIVED" %}readonly{% endif %}>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endif %}
+
+{% if role == "OWNER" and project.status != "ARCHIVED" %}
+<div class="card border-danger-subtle mt-4" data-testid="settings-archive-card">
+  <div class="card-body">
+    <h2 class="h6 text-danger">{% trans "Archive project" %}</h2>
+    <p class="small text-muted">{% trans "The project stays readable. New writes stop. Research metadata and exports remain." %}</p>
+    <form method="post" data-confirm="{% trans "Archive this project? It remains readable but writes stop." %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="archive">
+      <button class="btn btn-outline-danger" type="submit">{% trans "Archive project" %}</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/js/confirm.js"></script>
+{% endblock %}

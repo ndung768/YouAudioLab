@@ -1,0 +1,91 @@
+{% load i18n %}
+{% with u=request.resolver_match.url_name %}
+<nav class="project-nav{% if compact %} project-nav--compact{% endif %}" aria-label="{% trans 'Project navigation' %}">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">
+      <a href="{% url 'project-list' %}">{% trans "Projects" %}</a>
+    </li>
+    {% if u != "project-overview" %}
+    <li class="breadcrumb-item">
+      <a href="{% url 'project-overview' project.id %}">{{ project.name }}</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if u == "source-list" or u == "source-detail" %}{% trans "Sources" %}
+      {% elif u == "segment-index" %}{% trans "Segments" %}
+      {% elif u == "segment-workspace" %}{% trans "Workspace" %}
+      {% elif u == "project-progress" %}{% trans "Progress" %}
+      {% elif u == "project-quality" %}{% trans "Quality" %}
+      {% elif u == "project-work-queue" %}{% trans "Work queue" %}
+      {% elif u == "labels" %}{% trans "Labels" %}
+      {% elif u == "members" %}{% trans "Members" %}
+      {% elif u == "settings" %}{% trans "Settings" %}
+      {% elif u == "project-export" %}{% trans "Export" %}
+      {% else %}{% trans "Detail" %}{% endif %}
+    </li>
+    {% else %}
+    <li class="breadcrumb-item active" aria-current="page">{{ project.name }}</li>
+    {% endif %}
+  </ol>
+
+  {% if not compact %}
+  <div class="project-nav__bar">
+    <a class="project-nav__title" href="{% url 'project-overview' project.id %}">
+      <i class="bi bi-folder-fill"></i> <span>{{ project.name }}</span>
+    </a>
+    {% if project.status == "ARCHIVED" %}
+    <span class="badge bg-warning text-dark"><i class="bi bi-archive"></i> {% trans "Archived" %}</span>
+    {% endif %}
+    {% if role %}
+    <span class="badge text-bg-secondary">{{ role }}</span>
+    {% endif %}
+  </div>
+
+  <div class="project-tabs">
+    <a href="{% url 'project-overview' project.id %}"
+       class="project-tab{% if u == 'project-overview' %} active{% endif %}">
+      <i class="bi bi-collection"></i> {% trans "Overview" %}
+    </a>
+    <a href="{% url 'project-progress' project.id %}"
+       class="project-tab{% if u == 'project-progress' %} active{% endif %}">
+      <i class="bi bi-graph-up"></i> {% trans "Progress" %}
+    </a>
+    {% if role == "OWNER" %}
+    <a href="{% url 'project-quality' project.id %}"
+       class="project-tab{% if u == 'project-quality' %} active{% endif %}">
+      <i class="bi bi-clipboard-data"></i> {% trans "Quality" %}
+    </a>
+    {% endif %}
+    <a href="{% url 'project-work-queue' project.id %}"
+       class="project-tab{% if u == 'project-work-queue' %} active{% endif %}">
+      <i class="bi bi-list-task"></i> {% trans "Work queue" %}
+    </a>
+    <a href="{% url 'source-list' project.id %}"
+       class="project-tab{% if u == 'source-list' or u == 'source-detail' %} active{% endif %}">
+      <i class="bi bi-youtube"></i> {% trans "Sources" %}
+    </a>
+    <a href="{% url 'segment-index' project.id %}"
+       class="project-tab{% if u == 'segment-index' or u == 'segment-workspace' %} active{% endif %}">
+      <i class="bi bi-scissors"></i> {% trans "Segments" %}
+    </a>
+    <a href="{% url 'labels' project.id %}"
+       class="project-tab{% if u == 'labels' %} active{% endif %}">
+      <i class="bi bi-tags"></i> {% trans "Labels" %}
+    </a>
+    <a href="{% url 'members' project.id %}"
+       class="project-tab{% if u == 'members' %} active{% endif %}">
+      <i class="bi bi-people"></i> {% trans "Members" %}
+    </a>
+    <a href="{% url 'settings' project.id %}"
+       class="project-tab{% if u == 'settings' %} active{% endif %}">
+      <i class="bi bi-gear"></i> {% trans "Settings" %}
+    </a>
+    {% if role == "OWNER" %}
+    <a href="{% url 'project-export' project.id %}"
+       class="project-tab{% if u == 'project-export' %} active{% endif %}">
+      <i class="bi bi-download"></i> {% trans "Export" %}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</nav>
+{% endwith %}

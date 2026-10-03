@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load i18n yal_badges %}
+{% block title %}{{ source.youtube_video_id }} — {{ project.name }}{% endblock %}
+{% block content %}
+<div
+  class="source-workspace"
+  data-source-workspace
+  data-youtube-id="{{ source.youtube_video_id }}"
+  data-duration="{{ source.duration_seconds|default:'' }}"
+  data-testid="source-workspace"
+>
+  <div class="page-head">
+    <div>
+      <h1 class="h4 mb-1">{{ source.title|default:source.youtube_video_id }}</h1>
+      <p class="mb-1">
+        {% status_badge source.source_status "source" %}
+        <span class="text-muted small ms-2">
+          {{ source.channel_name|default:"—" }}
+          ·
+          {% if source.duration_seconds %}{{ source.duration_seconds }}s{% else %}{% trans "Duration unknown" %}{% endif %}
+        </span>
+      </p>
+      <p class="mb-0 small">
+        <code>{{ source.youtube_video_id }}</code>
+        · <a href="{{ source.youtube_url }}" rel="noopener noreferrer" target="_blank"><i class="bi bi-box-arrow-up-right"></i> YouTube</a>
+      </p>
+    </div>
+    <div class="page-head__actions">
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'source-list' project.id %}">
+        <i class="bi bi-arrow-left"></i> {% trans "Sources" %}
+      </a>
+    </div>
+  </div>
+
+  {% if not source.duration_seconds %}
+  <div class="alert alert-warning" role="status">
+    {% trans "Create Segment is unavailable until source duration is known." %}
+    {% if source.source_status == "PENDING_METADATA" %}
+    {% trans "Metadata is still pending." %}
+    {% elif source.source_status == "METADATA_FAILED" %}
+    {% trans "Metadata fetch failed — try Refresh metadata." %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if role == "OWNER" and project.status != "ARCHIVED" %}
+  <form method="post" class="mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="refresh_metadata">
+    <button class="btn btn-sm btn-outline-primary" type="submit">{% trans "Refresh metadata" %}</button>
+  </form>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="ratio ratio-16x9 mb-3 bg-dark rounded overflow-hidden">
+        <div id="yt-player" data-testid="yt-player"></div>
+      </div>
+      <p class="small text-muted mb-0">
+        {% trans "Shortcuts:" %}
+        <kbd>S</kbd> {% trans "Set Start" %} ·
+        <kbd>E</kbd> {% trans "Set End" %} ·
+        <kbd>Space</kbd> {% trans "Play/Pause" %}
+      </p>
+    </div>
+
+    <div class="col-lg-5">
+      {% if role == "OWNER" and project.status != "ARCHIVED" and source.duration_seconds %}
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h2 class="h6">{% trans "Segment editor" %}</h2>
+          <p class="small text-muted">{% trans "Set bounds from the player, then create. Opens Segment Workspace after create." %}</p>
+          <form method="post" data-create-segment-form>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_segment">
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label" for="start-seconds">{% trans "Start" %}</label>
+                <input class="form-control" name="start_seconds" id="start-seconds" type="number" step="0.001" min="0" value="0" required data-start-input>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="end-seconds">{% trans "End" %}</label>
+                <input class="form-control" name="end_seconds" id="end-seconds" type="number" step="0.001" min="0" max="{{ source.duration_seconds }}" value="{% if source.duration_seconds < 10 %}{{ source.duration_seconds }}{% else %}10{% endif %}" required data-end-input>
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-set-start data-testid="set-start">
+                {% trans "Set Start" %} <kbd class="small">S</kbd>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-set-end data-testid="set-end">
+                {% trans "Set End" %} <kbd class="small">E</kbd>
+              </button>
+              <span class="small text-muted align-self-center" data-duration-display></span>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">{% trans "Transcript" %}</label>
+              <textarea class="form-control" name="transcript" rows="2"></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">{% trans "Create segment" %}</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <h2 class="h6">{% trans "Segments" %}</h2>
+      {% if segment_rows %}
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>{% trans "Start" %}</th>
+              <th>{% trans "End" %}</th>
+              <th>{% trans "Ready" %}</th>
+              <th>{% trans "Status" %}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in segment_rows %}
+            {% with segment=row.segment readiness=row.readiness %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-1">
+                  {% if segment.current_artifact_id %}
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary px-1 py-0"
+                    data-play-artifact="{{ segment.current_artifact_id }}"
+                    data-testid="segment-play"
+                    title="{% trans 'Play segment audio' %}"
+                    aria-label="{% trans 'Play segment audio' %}"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-play-fill" aria-hidden="true"></i>
+                  </button>
+                  {% endif %}
+                  <span>{{ segment.segment_index }}</span>
+                </div>
+              </td>
+              <td>{{ segment.start_seconds }}</td>
+              <td>{{ segment.end_seconds }}</td>
+              <td style="min-width:7.5rem">
+                {% readiness_status readiness.is_ready readiness.failed_gates %}
+              </td>
+              <td>{% status_badge segment.processing_status "processing" %}</td>
+              <td><a href="{% url 'segment-workspace' project.id segment.id %}">{% trans "Workspace" %}</a></td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted">{% trans "No segments on this source yet." %}</p>
+      {% endif %}
+      <p class="mb-0"><a href="{% url 'segment-index' project.id %}">{% trans "View all project segments" %}</a></p>
+    </div>
+  </div>
+</div>
+<audio id="segment-list-player" preload="none" hidden></audio>
+{% endblock %}
+{% block scripts %}
+<script src="https://www.youtube.com/iframe_api"></script>
+<script type="module" src="/static/js/source_workspace.js"></script>
+<script type="module" src="/static/js/segment_list_audio.js"></script>
+{% endblock %}

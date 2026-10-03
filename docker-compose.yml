@@ -1,0 +1,88 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: youaudiolab
+      POSTGRES_PASSWORD: youaudiolab
+      POSTGRES_DB: youaudiolab_django
+    ports:
+      - "5433:5432"
+    volumes:
+      - youaudiolab_django_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U youaudiolab -d youaudiolab_django"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.docker
+      DJANGO_SECRET_KEY: docker-dev-only
+      DATABASE_URL: postgresql://youaudiolab:youaudiolab@db:5432/youaudiolab_django
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      STORAGE_ROOT: /data/storage
+      CELERY_ENQUEUE_ENABLED: "true"
+    ports:
+      - "8001:8001"
+    volumes:
+      - youaudiolab_django_storage:/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command:
+      [
+        "sh",
+        "-c",
+        "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8001",
+      ]
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.docker
+      DJANGO_SECRET_KEY: docker-dev-only
+      DATABASE_URL: postgresql://youaudiolab:youaudiolab@db:5432/youaudiolab_django
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      STORAGE_ROOT: /data/storage
+      CELERY_WORKER_CONCURRENCY: ${CELERY_WORKER_CONCURRENCY:-2}
+    command:
+      [
+        "celery",
+        "-A",
+        "config.celery",
+        "worker",
+        "--loglevel=info",
+      ]
+    volumes:
+      - youaudiolab_django_storage:/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  youaudiolab_django_pgdata:
+  youaudiolab_django_storage:
