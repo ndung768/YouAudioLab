@@ -1,5 +1,5 @@
 {
-  "ready": true,
+  "ready": false,
   "sample": {
     "n_segments": 20,
     "audio_seconds": 437.0,
@@ -30,16 +30,16 @@
     ]
   },
   "manual": {
-    "n": 20,
-    "total_seconds": 856.161,
-    "total_minutes": 14.27,
-    "mean_seconds_per_segment": 42.81
+    "n": 0,
+    "total_seconds": 0,
+    "total_minutes": null,
+    "mean_seconds_per_segment": null
   },
   "tool_human": {
-    "n": 20,
-    "total_seconds": 428.25,
-    "total_minutes": 7.14,
-    "mean_seconds_per_segment": 21.41
+    "n": 0,
+    "total_seconds": 0,
+    "total_minutes": null,
+    "mean_seconds_per_segment": null
   },
   "machine": {
     "n_jobs": 40,
@@ -59,17 +59,59 @@
     }
   },
   "figure4": {
-    "manual_human_minutes": 14.27,
-    "tool_human_minutes": 7.14,
+    "manual_human_minutes": null,
+    "tool_human_minutes": null,
     "machine_minutes": 0.48,
-    "batch_total_minutes": 7.62
+    "batch_total_minutes": null
   },
   "throughput": {
     "machine_segments_per_hour": 2500.0
   },
   "incomplete": {
-    "manual_missing": [],
-    "tool_human_missing": [],
+    "manual_missing": [
+      "MB_207",
+      "MB_208",
+      "MB_209",
+      "MB_223",
+      "MB_224",
+      "MB_227",
+      "MB_229",
+      "MB_237",
+      "MB_259",
+      "MB_261",
+      "MB_263",
+      "MB_266",
+      "MB_274",
+      "MB_312",
+      "MB_339",
+      "MB_350",
+      "MB_364",
+      "MB_368",
+      "MB_378",
+      "MB_392"
+    ],
+    "tool_human_missing": [
+      "MB_207",
+      "MB_208",
+      "MB_209",
+      "MB_223",
+      "MB_224",
+      "MB_227",
+      "MB_229",
+      "MB_237",
+      "MB_259",
+      "MB_261",
+      "MB_263",
+      "MB_266",
+      "MB_274",
+      "MB_312",
+      "MB_339",
+      "MB_350",
+      "MB_364",
+      "MB_368",
+      "MB_378",
+      "MB_392"
+    ],
     "machine_missing_rows": 0
   }
 }

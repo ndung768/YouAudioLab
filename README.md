@@ -385,10 +385,9 @@ Further notes: [architecture](docs/architecture.md),
 
 Source repository: [https://github.com/ndung768/YouAudioLab](https://github.com/ndung768/YouAudioLab)
 
-The application source does not yet ship with a published software licence in
-this tree.
+The software is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE).
 
-**A software licence would not cover the recordings you collect.** Audio and
+**A software licence does not cover the recordings you collect.** Audio and
 transcripts taken from YouTube remain subject to YouTube’s terms and to the
 speakers’ rights. In Vietnam, personal data in a corpus is also subject to
 Decree 13/2023/ND-CP. Record the licence you intend to publish under, and the

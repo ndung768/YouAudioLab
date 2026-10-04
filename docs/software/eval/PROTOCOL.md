@@ -1,6 +1,12 @@
 # Timing experiment protocol (pilot N=20)
 
-Pilot comparison of **manual transcription** vs **YouAudioLab extract + ASR + human review** on a fixed sample drawn from [`audio_manifest.csv`](../../../../audio_manifest.csv).
+Pilot measurement of **YouAudioLab extract + ASR** (and, when filled by a
+human reviewer, manual transcription vs tool review) on a fixed sample from
+[`audio_manifest.csv`](../../../../audio_manifest.csv).
+
+Human stopwatch rows must come from a real editor session
+(`time_human_session.py` or hand-filled CSV). Do **not** invent human times
+from audio duration or automated playback.
 
 ## Sample
 
@@ -8,86 +14,73 @@ Pilot comparison of **manual transcription** vs **YouAudioLab extract + ASR + hu
 python docs/software/eval/select_sample.py
 ```
 
-Defaults: `--n 20 --seed 42 --min-s 8 --max-s 45`, manifest at `d:\researcher\audio_manifest.csv`.
+Defaults: `--n 20 --seed 42 --min-s 8 --max-s 45`, manifest at
+`d:\researcher\audio_manifest.csv`.
 
 Outputs:
 
-- `sample_segments.csv` — selected rows (`segment_id`, URL, bounds, local `audio_path`)
+- `sample_segments.csv` — selected rows
 - Empty templates: `timing_manual.csv`, `timing_tool_human.csv`, `machine_jobs.csv`
 
-Do **not** change the sample mid-experiment. Re-run `select_sample.py` only to regenerate the same IDs.
+Do **not** change the sample mid-experiment.
 
 ## What is timed
 
 | Condition | Timed | Not timed |
 | --- | --- | --- |
 | Manual | Hearing the local MP3 and typing the transcript in an external editor | Cutting, renaming, labelling, packaging an export |
-| Tool / machine | Extract + recognition job wall time (sum of job durations from logs/DB) | Live YouTube download if the source is already cached |
+| Tool / machine | Extract + recognition job wall time | Live YouTube download if the source is already cached |
 | Tool / human | Reviewing and accepting/editing the ASR candidate in the workspace | Labelling and export |
 
-One reviewer does both human conditions. Labelling may use a second person and is excluded from both timed columns.
-
-## Manual condition
-
-Attended-listen pilot (wall clock via `ffmpeg -re`, used for the SoftwareX redo):
-
-```bash
-python docs/software/eval/measure_human_listen.py --mode both
-```
-
-- Tool: one full realtime listen per segment with the ASR candidate available (`asr_candidates.csv`).
-- Manual: two full realtime listens per segment (hear + type pass); typing is treated as concurrent on the second pass.
-
-Finer editor-only stopwatch (optional):
+## Manual / tool-human (real stopwatch only)
 
 ```bash
 python docs/software/eval/time_human_session.py --mode manual --open-audio
+python docs/software/eval/time_human_session.py --mode tool --open-audio
 ```
 
-Or fill `timing_manual.csv` by hand (`duration_s`, or `started_at` + `ended_at` ISO-8601).
+Or fill `timing_manual.csv` / `timing_tool_human.csv` by hand (`duration_s`, or
+`started_at` + `ended_at` ISO-8601).
 
-## Tool condition
-
-### Machine time (agent path, no Docker required)
+## Machine
 
 ```bash
 python docs/software/eval/run_machine_local.py --model-size base
 ```
 
-Writes `machine_jobs.csv` and `asr_candidates.csv`. Extract is local MP3→16 kHz mono WAV with the same ffmpeg codec settings as YouAudioLab; ASR is faster-whisper (`vi`). No live YouTube download is timed.
+Writes `machine_jobs.csv` and `asr_candidates.csv`. Extract is local MP3→16 kHz
+mono WAV with YouAudioLab codec settings; ASR is faster-whisper (`vi`).
 
-### Machine time (full YouAudioLab stack, when Docker is up)
+With Docker up:
 
 ```bash
 python docs/software/eval/seed_timing_project.py --email YOU@example.com --mark-ready
-# queue extract + ASR in the UI or API, then:
 python docs/software/eval/export_machine_jobs_from_db.py --project-id <uuid>
 ```
 
-### Human review
+## Summarize / figure
 
 ```bash
-python docs/software/eval/time_human_session.py --mode tool --open-audio
-```
-
-Or fill `timing_tool_human.csv` by hand while reviewing candidates from `asr_candidates.csv` in the workspace.
-
-## Summarize
-
-```bash
-python docs/software/eval/summarize_timing.py
-```
-
-Writes `results.json` and prints Table-3-style totals. Exit code is non-zero until every human row and at least the machine job rows needed for a complete batch have durations.
-
-## Figure 4
-
-```bash
+python docs/software/eval/summarize_timing.py --allow-partial   # machine-only OK
 python docs/software/figures/figure4_review_time.py
 ```
 
-Reads `docs/software/eval/results.json` (`figure4` keys). Refuses to draw if `ready` is false.
+`results.json` is `ready: true` only when both human CSVs are complete. Until
+then Figure 4 draws the machine-only pilot breakdown.
+
+## Integrity (I1 race, I2 extract repeatability, duration \(E_i\))
+
+```bash
+python docs/software/eval/run_integrity_checks.py
+```
+
+Writes `integrity_race.csv`, `integrity_extract.csv`, `integrity_results.json`.
+Requires PostgreSQL for the race block (same DB as local Docker). Duration
+error is \(|t_{wav}-(t_{end}-t_{start})|\) from the WAV header; extract
+repeatability is within-environment only (local MP3 → WAV), not live YouTube.
 
 ## Manuscript
 
-After `results.json` is ready, update §3 Evaluation (EN + VI): N=20, audio minutes, video count, Table 3 numbers, Figure 4 caption, then rebuild with `build_manuscript.py`.
+Update §3 only with numbers that appear in `results.json` and
+`integrity_results.json`. Do not paste placeholder human minutes. Abstract
+and body must use the same N (20), not a residual larger count.

@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-10-04T09:28:04Z",
+  "extract": {
+    "n_segments": 20,
+    "repeats": 3,
+    "checksum_identical_segments": 20,
+    "checksum_mismatches": 0,
+    "mean_abs_duration_error_s": 0.0,
+    "max_abs_duration_error_s": 0.0,
+    "csv": "D:\\researcher\\YouAudioLab_Django\\docs\\software\\eval\\integrity_extract.csv"
+  },
+  "race": {
+    "n_trials": 100,
+    "stale_publications": 0,
+    "protocol": "logical publish-after-revision: submit@R, bound-edit\u2192R+1, late publish; assert job=STALE and current_artifact_id is None (DB state)",
+    "check_location": "JobService.publish (select_for_update; expected_revision)",
+    "csv": "D:\\researcher\\YouAudioLab_Django\\docs\\software\\eval\\integrity_race.csv"
+  }
+}

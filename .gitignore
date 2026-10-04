@@ -24,6 +24,8 @@ docs/software/figures/icons/*.*
 !docs/software/figures/figure1-architecture.png
 !docs/software/figures/figure1-architecture.svg
 !docs/software/eval/*
+docs/software/eval/_machine_work/
+docs/software/eval/_integrity_work/
 tests/*
 *.log
 
