@@ -33,8 +33,9 @@ the same recording as the training set.
   checksum. ASR and AI suggestions stay as candidates until a person applies
   them to the canonical transcript.
 - Gives annotators a workspace on one segment: listen, read the transcript,
-  assign project labels. When blind mode is on, annotators see only their own
-  episodes.
+  assign project labels to the whole clip, or select a word or phrase in the
+  transcript and label that text. When blind mode is on, annotators see only
+  their own episodes and spans.
 - Routes work through a queue (assign, start, complete, release). Overlap is
   how you get agreement: assign the same segment to more than one person.
 - Reports Jaccard, Cohen’s κ, and Fleiss’ κ on Progress, plus a quality report
@@ -103,7 +104,7 @@ You need Python 3.12–3.14, FFmpeg on `PATH`, and Docker if you want the bundle
 Postgres and Redis.
 
 ```powershell
-cd YouAudioLab_Django
+cd YouAudioLab
 copy .env.example .env
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -151,8 +152,11 @@ annotation), blind labelling, and the corpus license plus consent notes. Those
 notes are copied into exports and the quality report.
 
 **Define labels, then attach them to the project.** A label can carry a
-description and include/exclude guidance. Annotators apply project labels to a
-whole segment, not to words inside the transcript.
+description and include/exclude guidance. Each project label has a scope:
+*whole segment* (for example `Miền bắc`), *text in transcript* (for example
+`toxic` on the word `dm`), or both. The workspace shows segment-scope labels as
+clip chips and text-scope labels in the phrase bar after you drag across words.
+Agreement, gold, and `supervised_labels` use segment-scope labels only.
 
 **Add members.** Owners edit cuts, gold, export, and quality. Annotators label.
 System ASR and system AI are a separate allowlist (`ASR_ADMIN_USER_IDS`,
@@ -185,23 +189,23 @@ Formats are views of one snapshot. The unit is the segment.
 
 | Key | File | Notes |
 |---|---|---|
-| `json` | `.json` | Full document: segments, annotation episodes, assignments, ASR runs, AI assists, split, supervision, `content_hash`. |
+| `json` | `.json` | Full document: segments, annotation episodes, in-transcript spans, video description, assignments, ASR runs, AI assists, split, supervision, `content_hash`. |
 | `jsonl` | `.jsonl` | The same segment records, one object per line. |
-| `dataset_zip` | `.zip` | Audio from the current verified artifact, CSV metadata, and a README. `storage_key` is not in the public JSON. |
+| `dataset_zip` | `.zip` | Verified audio, `metadata.csv`, `spans.csv` (YouTube link, times, title, description, transcript, span label), and a README. |
 
 **Training**
 
 | Key | File | Notes |
 |---|---|---|
-| `hf_jsonl` | `.jsonl` | Text classification for Hugging Face. First line is label metadata. |
-| `spacy_json` | `.json` | Document categories. Entity spans are empty; labels cover the whole segment. |
+| `hf_jsonl` | `.jsonl` | Text classification plus `spans` for in-transcript labels. |
+| `spacy_json` | `.json` | Document categories and entity spans from in-transcript labels. |
 | `json_llm` | `.jsonl` | Chat `messages` for fine-tuning. |
 
 **Other tools and spreadsheets**
 
 | Key | File | Notes |
 |---|---|---|
-| `doccano_jsonl` | `.jsonl` | Text classification, not token spans. |
+| `doccano_jsonl` | `.jsonl` | Segment text classification. Token spans are in the research export and `spans.csv`. |
 | `label_studio_json` | `.json` | Choices on the transcript. |
 | `json_segments` | `.json` | Transcript plus supervised labels. |
 | `xml` | `.xml` | Segment tree. |
@@ -347,8 +351,13 @@ Further design notes: [architecture](docs/architecture.md),
 
 ## Known limitations
 
-- There is no token-level or BIO labelling. A label applies to the whole
-  segment. Sequence-tagging exports from other tools are intentionally absent.
+- In-transcript labels are character spans on the accepted transcript (a word
+  or a dragged phrase), not a BIO tag on every token. Agreement and gold still
+  apply to the whole segment. Doccano export stays segment classification;
+  span rows are in the research JSON, spaCy entities, and `spans.csv`.
+- YouTube description is stored when metadata is fetched. Videos imported
+  before that field existed need a metadata refresh before description appears
+  in the export.
 - Agreement is multi-label set overlap plus per-label Cohen/Fleiss on presence,
   not Krippendorff’s alpha.
 - Gold is a label set the owner saves. It is not a separate adjudication

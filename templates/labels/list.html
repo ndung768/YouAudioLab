@@ -58,6 +58,14 @@
                   <input class="form-control form-control-sm" name="override_color" value="{{ pl.override_color|default:pl.label.color|default:'' }}">
                 </div>
                 <div class="mb-2">
+                  <label class="form-label small" for="scope-{{ pl.id }}">{% trans "Used for" %}</label>
+                  <select class="form-select form-select-sm" name="scope" id="scope-{{ pl.id }}">
+                    <option value="SEGMENT" {% if pl.scope == "SEGMENT" %}selected{% endif %}>{% trans "Whole segment" %}</option>
+                    <option value="SPAN" {% if pl.scope == "SPAN" %}selected{% endif %}>{% trans "Text in transcript" %}</option>
+                    <option value="BOTH" {% if pl.scope == "BOTH" %}selected{% endif %}>{% trans "Both" %}</option>
+                  </select>
+                </div>
+                <div class="mb-2">
                   <label class="form-label small">{% trans "Sort order" %}</label>
                   <input class="form-control form-control-sm" name="sort_order" type="number" value="{{ pl.sort_order }}">
                 </div>
@@ -69,6 +77,7 @@
                 <div>
                   <span class="label-color-swatch me-1" style="background: {{ pl.display_color|default:'#6c757d' }};"></span>
                   <strong>{{ pl.display_name }}</strong>
+                  <span class="badge rounded-pill text-bg-light border ms-1" data-testid="label-scope">{% if pl.scope == "SEGMENT" %}{% trans "Whole segment" %}{% elif pl.scope == "SPAN" %}{% trans "Text in transcript" %}{% else %}{% trans "Segment + text" %}{% endif %}</span>
                   {% if not pl.label.is_active %}
                   <span class="badge rounded-pill bg-secondary-subtle text-secondary ms-1">{% trans "Inactive in catalog" %}</span>
                   {% endif %}
@@ -123,6 +132,11 @@
               <div>
                 <span class="label-color-swatch me-1" style="background: {{ label.color|default:'#6c757d' }};"></span>
                 <strong>{{ label.name }}</strong>
+                <span class="badge rounded-pill text-bg-light border ms-1">
+                  {% if label.default_scope == "SEGMENT" %}{% trans "Whole segment" %}
+                  {% elif label.default_scope == "SPAN" %}{% trans "Text in transcript" %}
+                  {% else %}{% trans "Segment + text" %}{% endif %}
+                </span>
                 {% if label.description %}<div class="small text-muted">{{ label.description }}</div>{% endif %}
               </div>
               <form method="post">
@@ -154,6 +168,14 @@
             <div class="mb-2">
               <label class="form-label">{% trans "Color" %}</label>
               <input class="form-control form-control-sm" name="color" type="color" value="#0f6b6b">
+            </div>
+            <div class="mb-2">
+              <label class="form-label" for="new-label-scope">{% trans "Used for" %}</label>
+              <select class="form-select form-select-sm" name="scope" id="new-label-scope">
+                <option value="BOTH">{% trans "Both" %}</option>
+                <option value="SEGMENT">{% trans "Whole segment" %}</option>
+                <option value="SPAN">{% trans "Text in transcript" %}</option>
+              </select>
             </div>
             <div class="mb-2">
               <label class="form-label">{% trans "Sort order" %}</label>

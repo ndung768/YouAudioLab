@@ -299,6 +299,16 @@ class AudioSegment(TimeStampedModel):
         return self.source.project_id
 
 
+class LabelScope(models.TextChoices):
+    SEGMENT = "SEGMENT", "Whole segment"
+    SPAN = "SPAN", "Text in transcript"
+    BOTH = "BOTH", "Both"
+
+
+LABEL_SEGMENT_SCOPES = (LabelScope.SEGMENT, LabelScope.BOTH)
+LABEL_SPAN_SCOPES = (LabelScope.SPAN, LabelScope.BOTH)
+
+
 class Label(TimeStampedModel):
     """User-owned label catalog (AnnotaHub-style). Reusable across projects."""
 
@@ -317,6 +327,12 @@ class Label(TimeStampedModel):
         help_text="Operational definition: what to exclude for this label.",
     )
     color = models.CharField(max_length=32, null=True, blank=True)
+    default_scope = models.CharField(
+        max_length=16,
+        choices=LabelScope.choices,
+        default=LabelScope.BOTH,
+        help_text="Default use when this catalog label is added to a project.",
+    )
     is_active = models.BooleanField(
         default=True,
         help_text="When false, label cannot be added to new projects.",
@@ -330,6 +346,10 @@ class Label(TimeStampedModel):
                 "owner",
                 name="uq_label_owner_name_lower",
             ),
+            models.CheckConstraint(
+                condition=Q(default_scope__in=["SEGMENT", "SPAN", "BOTH"]),
+                name="ck_label_default_scope",
+            ),
         ]
         ordering = ["name"]
 
@@ -340,7 +360,12 @@ class Label(TimeStampedModel):
 class ProjectLabel(models.Model):
     """Assigns a user-owned Label to a project with optional display overrides."""
 
+    Scope = LabelScope
+    SEGMENT_SCOPES = LABEL_SEGMENT_SCOPES
+    SPAN_SCOPES = LABEL_SPAN_SCOPES
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    scope = models.CharField(max_length=16, choices=LabelScope.choices, default=LabelScope.BOTH)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="project_labels")
     label = models.ForeignKey(Label, on_delete=models.CASCADE, related_name="project_labels")
     override_name = models.CharField(max_length=255, null=True, blank=True)
@@ -353,13 +378,25 @@ class ProjectLabel(models.Model):
 
     class Meta:
         db_table = "project_labels"
+        ordering = ["sort_order", "id"]
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "label"],
                 name="uq_project_label",
             ),
+            models.CheckConstraint(
+                condition=Q(scope__in=["SEGMENT", "SPAN", "BOTH"]),
+                name="ck_pl_scope",
+            ),
         ]
-        ordering = ["sort_order", "id"]
+
+    @property
+    def for_segment(self) -> bool:
+        return self.scope in self.SEGMENT_SCOPES
+
+    @property
+    def for_span(self) -> bool:
+        return self.scope in self.SPAN_SCOPES
 
     @property
     def display_name(self) -> str:
@@ -564,3 +601,62 @@ class SegmentGoldLabel(models.Model):
             models.Index(fields=["segment"], name="ix_sgl_segment_id"),
         ]
         ordering = ["created_at"]
+
+
+class TranscriptSpan(models.Model):
+    """Annotator label on a character span of the accepted transcript.
+
+    Distinct from SegmentAnnotation, which covers the whole segment.
+    Offsets are Python indexes into AudioSegment.transcript at assign time.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    segment = models.ForeignKey(
+        AudioSegment,
+        on_delete=models.CASCADE,
+        related_name="transcript_spans",
+    )
+    label = models.ForeignKey(
+        ProjectLabel,
+        on_delete=models.CASCADE,
+        related_name="transcript_spans",
+    )
+    annotator = models.ForeignKey(
+        AppUser,
+        on_delete=models.RESTRICT,
+        related_name="transcript_spans",
+    )
+    start_char = models.PositiveIntegerField()
+    end_char = models.PositiveIntegerField()
+    quote = models.TextField()
+    span_group = models.UUIDField(default=uuid.uuid4, editable=False)
+    transcript_sha256 = models.CharField(max_length=64)
+    stale = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    removed_at = models.DateTimeField(null=True, blank=True)
+    removed_by = models.ForeignKey(
+        AppUser,
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name="removed_transcript_spans",
+    )
+
+    class Meta:
+        db_table = "transcript_spans"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["segment", "annotator", "label", "start_char", "end_char"],
+                condition=Q(removed_at__isnull=True, stale=False),
+                name="uq_ts_active",
+            ),
+            models.CheckConstraint(
+                condition=Q(end_char__gt=models.F("start_char")),
+                name="ck_ts_end_gt_start",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["segment"], name="ix_ts_segment_id"),
+            models.Index(fields=["annotator"], name="ix_ts_annotator_id"),
+        ]
+        ordering = ["start_char", "end_char", "created_at"]

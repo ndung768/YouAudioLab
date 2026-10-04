@@ -769,6 +769,41 @@ body.auth-body {
   color: #b45309;
 }
 
+.transcript-tokens {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 1.05rem;
+  user-select: none;
+}
+
+.transcript-tokens .tok {
+  display: inline;
+  border-radius: 0.2rem;
+  padding: 0.05rem 0.12rem;
+  cursor: pointer;
+}
+
+.transcript-tokens .tok:hover {
+  background: rgba(15, 118, 110, 0.12);
+}
+
+.transcript-tokens .tok.is-selected {
+  background: rgba(217, 119, 6, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(180, 83, 9, 0.55);
+}
+
+.transcript-tokens .tok.has-span {
+  box-shadow: inset 0 -3px 0 var(--span-color, #d97706);
+  font-weight: 600;
+}
+
+.span-label-bar {
+  padding: 0.75rem 0.85rem;
+  background: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  border-radius: var(--yal-radius);
+}
+
 .settings-savebar {
   z-index: 1020;
   padding: 0.65rem 0.85rem;

@@ -64,7 +64,9 @@ class GoldService:
             found = {
                 row.id
                 for row in ProjectLabel.objects.filter(
-                    project_id=project_id, id__in=wanted
+                    project_id=project_id,
+                    id__in=wanted,
+                    scope__in=ProjectLabel.SEGMENT_SCOPES,
                 )
             }
             missing = [str(lid) for lid in wanted if lid not in found]

@@ -63,6 +63,7 @@ from apps.workspace.services import (
     QualityReportService,
     SegmentService,
     SourceService,
+    TranscriptSpanService,
 )
 
 
@@ -708,7 +709,7 @@ def segment_index(request: HttpRequest, project_id) -> HttpResponse:
                 source_filter = ""
                 source_id = None
         sources = SourceService().list_for_project(project_id)
-        project_labels = LabelService().list_for_project(project_id)
+        project_labels = LabelService().list_for_project(project_id, scope="segment")
         role = _role(project_id, user.id)
         blind = _annotator_blind(role, project)
         rows = SegmentService().list_index_rows(
@@ -870,6 +871,22 @@ def segment_workspace(request: HttpRequest, project_id, segment_id) -> HttpRespo
                         reviewed=False,
                     )
                     messages.success(request, _("Audio review cleared."))
+                elif action == "assign_span":
+                    TranscriptSpanService().assign(
+                        segment_id=segment_id,
+                        label_id=request.POST.get("label_id"),
+                        actor_user_id=user.id,
+                        start_char=request.POST.get("start_char") or None,
+                        end_char=request.POST.get("end_char") or None,
+                        quote=request.POST.get("quote") or None,
+                    )
+                    messages.success(request, _("Text span assigned."))
+                elif action == "remove_span":
+                    TranscriptSpanService().remove(
+                        request.POST.get("span_id"),
+                        actor_user_id=user.id,
+                    )
+                    messages.success(request, _("Text span removed."))
                 elif action == "remove_annotation":
                     AnnotationService().remove(
                         request.POST.get("annotation_id"),
@@ -1039,7 +1056,8 @@ def segment_workspace(request: HttpRequest, project_id, segment_id) -> HttpRespo
     jobs = JobService(get_storage()).list_for_segment(segment_id)
     active_annotations = [a for a in annotations if a.removed_at is None]
     removed_annotations = [a for a in annotations if a.removed_at is not None]
-    active_labels = labels
+    active_labels = [label for label in labels if label.for_segment]
+    span_labels = [label for label in labels if label.for_span]
     mine_by_label = {
         a.label_id: a
         for a in AnnotationService().list_for_segment(
@@ -1050,6 +1068,19 @@ def segment_workspace(request: HttpRequest, project_id, segment_id) -> HttpRespo
         )
         if a.removed_at is None
     }
+    text_spans = TranscriptSpanService().list_for_segment(
+        segment_id,
+        actor_user_id=user.id,
+        include_removed=False,
+        include_stale=False,
+        annotator_id=user.id if ann_scope == "mine" else None,
+    )
+    transcript_tokens = TranscriptSpanService().decorate(
+        segment.transcript or "",
+        text_spans,
+        actor_user_id=user.id,
+        can_remove_any=role == "OWNER",
+    )
     label_chips = []
     for index, label in enumerate(active_labels[:9], start=1):
         label_chips.append(
@@ -1061,6 +1092,10 @@ def segment_workspace(request: HttpRequest, project_id, segment_id) -> HttpRespo
         )
     for label in active_labels[9:]:
         label_chips.append({"label": label, "hotkey": None, "mine": mine_by_label.get(label.id)})
+    span_chips = [
+        {"label": label, "hotkey": str(index) if index <= 9 else None}
+        for index, label in enumerate(span_labels, start=1)
+    ]
     prev_segment, next_segment = SegmentService().neighbors(project_id, segment.id)
     next_assigned = AssignmentService().next_assigned_segment(
         project_id, user_id=user.id
@@ -1136,6 +1171,9 @@ def segment_workspace(request: HttpRequest, project_id, segment_id) -> HttpRespo
             "gold_label_ids": gold_label_ids,
             "mine_by_label": mine_by_label,
             "label_chips": label_chips,
+            "span_chips": span_chips,
+            "text_spans": text_spans,
+            "transcript_tokens": transcript_tokens,
             "prev_segment": prev_segment,
             "next_segment": next_segment,
             "next_assigned": next_assigned,
@@ -1204,6 +1242,7 @@ def labels_page(request: HttpRequest, project_id) -> HttpResponse:
                     description=request.POST.get("description") or None,
                     color=request.POST.get("color") or None,
                     sort_order=int(request.POST.get("sort_order") or "0"),
+                    scope=request.POST.get("scope") or None,
                 )
                 messages.success(request, _("Label created and added to project."))
             elif action == "update_override":
@@ -1218,6 +1257,7 @@ def labels_page(request: HttpRequest, project_id) -> HttpResponse:
                     or None,
                     override_color=request.POST.get("override_color") or None,
                     sort_order=int(request.POST.get("sort_order") or "0"),
+                    scope=request.POST.get("scope") or None,
                 )
                 messages.success(request, _("Label updated."))
             return redirect("labels", project_id=project_id)
@@ -1403,6 +1443,7 @@ def global_labels_page(request: HttpRequest) -> HttpResponse:
                     include_guidance=request.POST.get("include_guidance") or None,
                     exclude_guidance=request.POST.get("exclude_guidance") or None,
                     color=request.POST.get("color") or None,
+                    default_scope=request.POST.get("default_scope") or None,
                 )
                 messages.success(request, _("Label created."))
             elif action == "update":
@@ -1415,7 +1456,9 @@ def global_labels_page(request: HttpRequest) -> HttpResponse:
                     include_guidance=request.POST.get("include_guidance") or None,
                     exclude_guidance=request.POST.get("exclude_guidance") or None,
                     color=request.POST.get("color") or None,
+                    default_scope=request.POST.get("default_scope") or None,
                     is_active=is_active,
+                    sync_project_scopes=request.POST.get("sync_project_scopes") == "on",
                 )
                 messages.success(request, _("Label saved."))
             elif action == "deactivate":

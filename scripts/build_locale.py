@@ -53,7 +53,7 @@ VI = {
     "Create without password": "Tạo không mật khẩu",
     "User UUID": "UUID người dùng",
     "Use this identity": "Dùng danh tính này",
-    "YouAudioLab · Gate A1 identity": "YouAudioLab · Danh tính Gate A1",
+    "YouAudioLab": "YouAudioLab",
     "My Projects": "Dự án của tôi",
     "No description": "Không có mô tả",
     "Open": "Mở",

@@ -985,8 +985,8 @@ msgstr "Bạn chưa có dự án nào. Bấm <strong>Dự án mới</strong> đ�
 msgid "You have no active annotations on this segment."
 msgstr "Bạn chưa có chú thích đang dùng trên đoạn này."
 
-msgid "YouAudioLab · Gate A1 identity"
-msgstr "YouAudioLab · Danh tính Gate A1"
+msgid "YouAudioLab"
+msgstr "YouAudioLab"
 
 msgid "YouTube URL"
 msgstr "URL YouTube"
@@ -1575,3 +1575,79 @@ msgstr "%(n)s thành viên đang hoạt động trong dự án."
 
 msgid "%(n)s active members in this project."
 msgstr "%(n)s thành viên đang hoạt động trong dự án."
+
+msgid ""
+"Drag across one word or several words, then pick a label. Esc clears the "
+"selection."
+msgstr "Kéo chọn một hoặc nhiều chữ rồi chọn nhãn. Esc để bỏ chọn."
+
+msgid ""
+"No text labels yet. On <a href=\"%(labels_url)s\">Labels</a>, set a label’s "
+"scope to “Text in transcript”."
+msgstr ""
+"Chưa có nhãn chữ. Vào <a href=\"%(labels_url)s\">Nhãn</a> và đặt phạm vi của"
+" nhãn là “Chữ trong transcript”."
+
+msgid "Label this phrase"
+msgstr "Gán nhãn cho cụm chữ"
+
+msgid "1–9 or click a label"
+msgstr "Bấm 1–9 hoặc chọn nhãn"
+
+msgid "Remove this phrase label"
+msgstr "Gỡ nhãn của cụm chữ này"
+
+msgid "Whole segment"
+msgstr "Cả đoạn audio"
+
+msgid "Text in transcript"
+msgstr "Chữ trong transcript"
+
+msgid "Both"
+msgstr "Cả hai"
+
+msgid "Segment + text"
+msgstr "Đoạn + chữ"
+
+msgid "Used for"
+msgstr "Dùng cho"
+
+msgid "Text span assigned."
+msgstr "Đã gán nhãn cho chữ."
+
+msgid "Text span removed."
+msgstr "Đã gỡ nhãn của chữ."
+
+msgid ""
+"Personal label catalog. Set whether each label is for the whole audio "
+"segment, text in the transcript, or both. Assign labels to projects from "
+"each project's label settings."
+msgstr ""
+"Katalog nhãn cá nhân. Chọn nhãn dùng cho cả đoạn audio, chữ trong "
+"transcript, hoặc cả hai. Gán nhãn vào dự án từ trang Nhãn của từng dự án."
+
+msgid "Also update this label in projects that already use it"
+msgstr "Cập nhật luôn nhãn này trong các dự án đang dùng"
+
+msgid ""
+"Note: “Used for” controls whether the label appears on whole-segment chips, "
+"on the text-phrase bar, or both. Deactivating hides it from “available "
+"labels” when adding to new projects. Labels already assigned to projects "
+"stay usable. Labels in use cannot be deleted."
+msgstr ""
+"Ghi chú: “Dùng cho” quyết định nhãn hiện ở chip cả đoạn, thanh gán chữ, hoặc"
+" cả hai. Vô hiệu hoá sẽ ẩn khỏi “nhãn có sẵn” khi thêm vào dự án mới. Nhãn "
+"đã gán vào dự án vẫn dùng được. Nhãn đang được dùng không xoá được."
+
+msgid ""
+"Whole segment = clip chips. Text in transcript = drag words then label. Both"
+" = either place."
+msgstr ""
+"Cả đoạn audio = chip cả clip. Chữ trong transcript = kéo chọn chữ rồi gán. "
+"Cả hai = dùng được ở cả hai chỗ."
+
+msgid "Segment #%(idx)s"
+msgstr "Đoạn #%(idx)s"
+
+msgid "Open the workspace to assign labels, run ASR, and review audio."
+msgstr "Mở workspace để gán nhãn, chạy ASR và nghe âm thanh."

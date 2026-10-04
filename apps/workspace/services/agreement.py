@@ -135,7 +135,9 @@ class AgreementService:
     def report(self, project_id: uuid.UUID) -> AgreementReport:
         catalog = [
             pl.display_name
-            for pl in ProjectLabel.objects.filter(project_id=project_id)
+            for pl in ProjectLabel.objects.filter(
+                project_id=project_id, scope__in=ProjectLabel.SEGMENT_SCOPES
+            )
             .select_related("label")
             .order_by("sort_order", "id")
         ]
@@ -252,7 +254,9 @@ class AgreementService:
 
     def label_balance(self, project_id: uuid.UUID) -> list[LabelBalanceRow]:
         labels = list(
-            ProjectLabel.objects.filter(project_id=project_id)
+            ProjectLabel.objects.filter(
+                project_id=project_id, scope__in=ProjectLabel.SEGMENT_SCOPES
+            )
             .select_related("label")
             .order_by("sort_order", "created_at")
         )

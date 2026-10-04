@@ -10,6 +10,7 @@ from apps.workspace.models import (
     ProjectSettings,
     SegmentAnnotation,
     SegmentGoldLabel,
+    TranscriptSpan,
     VideoSource,
 )
 
@@ -77,3 +78,8 @@ class SegmentAnnotationAdmin(admin.ModelAdmin):
 @admin.register(SegmentGoldLabel)
 class SegmentGoldLabelAdmin(admin.ModelAdmin):
     list_display = ("id", "segment", "label", "adjudicated_by", "created_at")
+
+
+@admin.register(TranscriptSpan)
+class TranscriptSpanAdmin(admin.ModelAdmin):
+    list_display = ("id", "segment", "label", "quote", "annotator", "stale", "removed_at")

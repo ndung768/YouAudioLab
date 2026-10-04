@@ -86,12 +86,17 @@ class LabelService:
         project_id: uuid.UUID,
         *,
         active_only: bool | None = None,
+        scope: str | None = None,
     ) -> list[ProjectLabel]:
         qs = (
             ProjectLabel.objects.filter(project_id=project_id)
             .select_related("label")
             .order_by("sort_order", "label__name")
         )
+        if scope == "segment":
+            qs = qs.filter(scope__in=ProjectLabel.SEGMENT_SCOPES)
+        elif scope == "span":
+            qs = qs.filter(scope__in=ProjectLabel.SPAN_SCOPES)
         if active_only is True:
             qs = qs.filter(label__is_active=True)
         elif active_only is False:
@@ -128,6 +133,7 @@ class LabelService:
         include_guidance: str | None = None,
         exclude_guidance: str | None = None,
         color: str | None = None,
+        default_scope: str | None = None,
     ) -> Label:
         name = (name or "").strip()
         if not name:
@@ -144,6 +150,7 @@ class LabelService:
                     include_guidance=include_guidance,
                     exclude_guidance=exclude_guidance,
                     color=color,
+                    default_scope=self._clean_scope(default_scope),
                     is_active=True,
                 )
         except IntegrityError as exc:
@@ -161,8 +168,11 @@ class LabelService:
         description: str | None = None,
         color: str | None = None,
         sort_order: int = 0,
+        scope: str | None = None,
     ) -> ProjectLabel:
         """Create (or reuse) a catalog label and assign it to the project."""
+        explicit_scope = scope is not None
+        scope_value = self._clean_scope(scope)
         self.memberships.require_owner(project_id, actor_user_id)
         self.memberships.require_active_project(project_id)
         owner_id = self._owner_id_for_project(project_id)
@@ -187,12 +197,14 @@ class LabelService:
                         name=name,
                         description=description,
                         color=color,
+                        default_scope=scope_value,
                         is_active=True,
                     )
+                project_scope = scope_value if explicit_scope else label.default_scope
                 pl, created = ProjectLabel.objects.get_or_create(
                     project_id=project_id,
                     label_id=label.id,
-                    defaults={"sort_order": sort_order},
+                    defaults={"sort_order": sort_order, "scope": project_scope},
                 )
                 if not created:
                     raise ValidationError(
@@ -212,6 +224,15 @@ class LabelService:
                 },
             ) from exc
 
+    def _clean_scope(self, scope: str | None) -> str:
+        value = (scope or ProjectLabel.Scope.BOTH).strip().upper()
+        if value not in ProjectLabel.Scope.values:
+            raise ValidationError(
+                "Unknown label scope",
+                details={"fields": [{"field": "scope", "code": "INVALID"}]},
+            )
+        return value
+
     def add_to_project(
         self,
         *,
@@ -229,7 +250,11 @@ class LabelService:
                 "Label not found",
                 details={"label_id": str(label_id)},
             )
-        pl, _ = ProjectLabel.objects.get_or_create(project_id=project_id, label_id=label.id)
+        pl, _ = ProjectLabel.objects.get_or_create(
+            project_id=project_id,
+            label_id=label.id,
+            defaults={"scope": label.default_scope},
+        )
         return pl
 
     def remove_from_project(
@@ -254,10 +279,14 @@ class LabelService:
         override_exclude_guidance: str | None | object = ...,
         override_color: str | None | object = ...,
         sort_order: int | None = None,
+        scope: str | None = None,
     ) -> ProjectLabel:
         pl = self.get(project_label_id)
         self.memberships.require_owner(pl.project_id, actor_user_id)
         self.memberships.require_active_project(pl.project_id)
+
+        if scope is not None:
+            pl.scope = self._clean_scope(scope)
 
         if override_name is not ...:
             pl.override_name = override_name  # type: ignore[assignment]
@@ -284,7 +313,9 @@ class LabelService:
         include_guidance: str | None | object = ...,
         exclude_guidance: str | None | object = ...,
         color: str | None | object = ...,
+        default_scope: str | None = None,
         is_active: bool | None = None,
+        sync_project_scopes: bool = False,
     ) -> Label:
         label = self.get_canonical(label_id)
         if label.owner_id != actor_user_id:
@@ -304,6 +335,8 @@ class LabelService:
             label.include_guidance = include_guidance  # type: ignore[assignment]
         if exclude_guidance is not ...:
             label.exclude_guidance = exclude_guidance  # type: ignore[assignment]
+        if default_scope is not None:
+            label.default_scope = self._clean_scope(default_scope)
         if color is not ...:
             label.color = color  # type: ignore[assignment]
         if is_active is not None:
@@ -312,6 +345,10 @@ class LabelService:
         try:
             with transaction.atomic():
                 label.save()
+                if sync_project_scopes and default_scope is not None:
+                    ProjectLabel.objects.filter(label_id=label.id).update(
+                        scope=label.default_scope
+                    )
         except IntegrityError as exc:
             raise ValidationError(
                 "Label name already exists in your catalog",

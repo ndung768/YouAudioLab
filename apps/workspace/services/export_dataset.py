@@ -24,12 +24,13 @@ from apps.workspace.models import (
     ProjectSettings,
     SegmentAnnotation,
     SegmentGoldLabel,
+    TranscriptSpan,
     VideoSource,
 )
 from apps.workspace.services.membership import MembershipService
 
 SCHEMA = "youaudiolab.research_dataset"
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 SUPERVISION_POLICIES = frozenset(
     {"union", "majority", "intersection", "first_annotator", "gold"}
 )
@@ -117,7 +118,7 @@ FORMATS: dict[str, ExportFormat] = {
         "Other tools",
         ".jsonl",
         "application/jsonl",
-        "Transcript plus active label names. No token spans; this corpus is segment-level.",
+        "Transcript plus active segment labels. In-transcript spans are in the research export.",
     ),
     "label_studio_json": ExportFormat(
         "label_studio_json",
@@ -141,7 +142,7 @@ FORMATS: dict[str, ExportFormat] = {
         "Training",
         ".json",
         "application/json",
-        "Text classification cats. Entity spans are empty because labels apply to the whole segment.",
+        "Document categories plus entity spans from in-transcript labels.",
     ),
     "json_llm": ExportFormat(
         "json_llm",
@@ -157,7 +158,7 @@ FORMATS: dict[str, ExportFormat] = {
         "Research",
         ".zip",
         "application/zip",
-        "audio/ files from current verified artifacts, CSV metadata, and README.md.",
+        "Verified audio, segment metadata (title, description, transcript, spans), and README.md.",
     ),
 }
 
@@ -181,6 +182,28 @@ def _iso(value) -> str | None:
 
 def _active_episodes(segment: dict) -> list[dict]:
     return [row for row in segment.get("annotations") or [] if row.get("removed_at") is None]
+
+
+def _active_text_spans(segment: dict) -> list[dict]:
+    return [
+        row
+        for row in segment.get("text_spans") or []
+        if row.get("removed_at") is None and not row.get("stale")
+    ]
+
+
+def _text_spans_json(segment: dict) -> str:
+    rows = [
+        {
+            "text": row["quote"],
+            "start": row["start_char"],
+            "end": row["end_char"],
+            "label": row["label"],
+            "annotator": row.get("annotator") or "",
+        }
+        for row in _active_text_spans(segment)
+    ]
+    return json.dumps(rows, ensure_ascii=False)
 
 
 def _active_labels(segment: dict) -> list[str]:
@@ -472,6 +495,19 @@ class ExportService:
         for row in gold_rows:
             by_segment_gold.setdefault(row.segment_id, []).append(row)
 
+        from apps.workspace.services.source import video_description
+
+        span_rows = list(
+            TranscriptSpan.objects.filter(segment_id__in=segment_ids)
+            .select_related("label__label", "annotator")
+            .order_by("start_char", "end_char", "created_at")
+        )
+        if not include_removed_annotations:
+            span_rows = [row for row in span_rows if row.removed_at is None]
+        by_segment_span: dict[uuid.UUID, list] = {}
+        for row in span_rows:
+            by_segment_span.setdefault(row.segment_id, []).append(row)
+
         user_ids: dict[uuid.UUID, str] = {}
         roles = {
             row.user_id: row.role
@@ -490,7 +526,8 @@ class ExportService:
         segment_payloads = []
         for segment in segments:
             artifact = segment.current_artifact
-            youtube_id = segment.source.youtube_video_id or ""
+            source_row = segment.source
+            youtube_id = source_row.youtube_video_id or ""
             segment_key = (
                 f"{youtube_id}#{segment.segment_index}"
                 if youtube_id
@@ -502,6 +539,10 @@ class ExportService:
                     "segment_key": segment_key,
                     "source_id": str(segment.source_id),
                     "youtube_video_id": youtube_id,
+                    "youtube_url": source_row.youtube_url,
+                    "title": source_row.title,
+                    "channel_name": source_row.channel_name,
+                    "description": video_description(source_row.metadata_json),
                     "segment_index": segment.segment_index,
                     "start_seconds": segment.start_seconds,
                     "end_seconds": segment.end_seconds,
@@ -582,6 +623,23 @@ class ExportService:
                             "completed_at": _iso(row.completed_at),
                         }
                         for row in by_segment_asr.get(segment.id, [])
+                    ],
+                    "text_spans": [
+                        {
+                            "span_id": str(row.id),
+                            "span_group": str(row.span_group),
+                            "project_label_id": str(row.label_id),
+                            "label": row.label.display_name,
+                            "annotator_id": remember(row.annotator),
+                            "annotator": row.annotator.display_name,
+                            "start_char": row.start_char,
+                            "end_char": row.end_char,
+                            "quote": row.quote,
+                            "stale": row.stale,
+                            "created_at": _iso(row.created_at),
+                            "removed_at": _iso(row.removed_at),
+                        }
+                        for row in by_segment_span.get(segment.id, [])
                     ],
                     "gold_labels": [
                         row.label.display_name
@@ -671,6 +729,7 @@ class ExportService:
                     "include_guidance": row.display_include_guidance,
                     "exclude_guidance": row.display_exclude_guidance,
                     "color": row.display_color,
+                    "scope": row.scope,
                     "catalog_is_active": row.label.is_active,
                 }
                 for row in labels
@@ -681,6 +740,7 @@ class ExportService:
                     "youtube_video_id": row.youtube_video_id,
                     "youtube_url": row.youtube_url,
                     "title": row.title,
+                    "description": video_description(row.metadata_json),
                     "channel_name": row.channel_name,
                     "duration_seconds": row.duration_seconds,
                     "source_status": row.source_status,
@@ -700,6 +760,7 @@ class ExportService:
                 "sources": len(source_list),
                 "segments": len(segment_payloads),
                 "annotations": sum(len(row["annotations"]) for row in segment_payloads),
+                "text_spans": sum(len(_active_text_spans(row)) for row in segment_payloads),
                 "assignments": sum(len(row["assignments"]) for row in segment_payloads),
                 "asr_runs": sum(len(row["asr_runs"]) for row in segment_payloads),
             },
@@ -784,6 +845,10 @@ def _render_csv_segments(snapshot: dict) -> bytes:
                 segment["deleted_at"] or "",
                 segment["segment_id"],
                 segment["source_id"],
+                segment.get("youtube_url") or "",
+                segment.get("title") or "",
+                segment.get("description") or "",
+                _text_spans_json(segment),
             ]
         )
     return _csv_bytes(
@@ -801,6 +866,10 @@ def _render_csv_segments(snapshot: dict) -> bytes:
             "deleted_at",
             "segment_id",
             "source_id",
+            "youtube_url",
+            "title",
+            "description",
+            "text_spans",
         ],
         rows,
     )
@@ -966,11 +1035,20 @@ def _render_label_studio(snapshot: dict) -> bytes:
     return _json_bytes(tasks)
 
 
+def _label_names(snapshot: dict, scopes: tuple[str, ...]) -> list[str]:
+    return [
+        row["name"]
+        for row in snapshot["label_set"]
+        if (row.get("scope") or "BOTH") in scopes
+    ]
+
+
 def _render_hf(snapshot: dict) -> bytes:
-    names = [row["name"] for row in snapshot["label_set"]]
+    names = _label_names(snapshot, ("SEGMENT", "BOTH"))
+    span_names = _label_names(snapshot, ("SPAN", "BOTH"))
     lines = [
         json.dumps(
-            {"__meta__": True, "task": "segment_classification", "label_names": names, "supervision_policy": snapshot.get("supervision_policy"), "split": snapshot.get("split"), "dataset_version": snapshot.get("dataset_version")},
+            {"__meta__": True, "task": "segment_classification", "label_names": names, "span_label_names": span_names, "supervision_policy": snapshot.get("supervision_policy"), "split": snapshot.get("split"), "dataset_version": snapshot.get("dataset_version")},
             ensure_ascii=False,
         )
     ]
@@ -981,6 +1059,20 @@ def _render_hf(snapshot: dict) -> bytes:
                     "id": segment["segment_id"],
                     "text": segment["transcript"],
                     "labels": _labels_for_training(snapshot, segment),
+                    "spans": [
+                        {
+                            "start": row["start_char"],
+                            "end": row["end_char"],
+                            "label": row["label"],
+                            "text": row["quote"],
+                        }
+                        for row in _active_text_spans(segment)
+                    ],
+                    "youtube_url": segment.get("youtube_url") or "",
+                    "title": segment.get("title") or "",
+                    "description": segment.get("description") or "",
+                    "start_seconds": segment["start_seconds"],
+                    "end_seconds": segment["end_seconds"],
                     "split": segment.get("split"),
                 },
                 ensure_ascii=False,
@@ -990,15 +1082,23 @@ def _render_hf(snapshot: dict) -> bytes:
 
 
 def _render_spacy(snapshot: dict) -> bytes:
-    label_names = [row["name"] for row in snapshot["label_set"]]
+    label_names = _label_names(snapshot, ("SEGMENT", "BOTH"))
     docs = []
     for segment in snapshot["segments"]:
         active = set(_labels_for_training(snapshot, segment))
+        entities: list[list] = []
+        seen: set[tuple] = set()
+        for row in _active_text_spans(segment):
+            item = (row["start_char"], row["end_char"], row["label"])
+            if item in seen:
+                continue
+            seen.add(item)
+            entities.append([row["start_char"], row["end_char"], row["label"]])
         docs.append(
             [
                 segment["transcript"],
                 {
-                    "entities": [],
+                    "entities": entities,
                     "cats": {name: 1.0 if name in active else 0.0 for name in label_names},
                 },
             ]
@@ -1051,7 +1151,21 @@ def _xlsx_sheet(rows: list[list]) -> str:
 
 
 def _render_xlsx(snapshot: dict) -> bytes:
-    segment_rows = [["segment_key", "segment_index", "split", "transcript", "labels", "revision", "segment_id"]]
+    segment_rows = [["segment_key", "segment_index", "split", "transcript", "labels", "text_spans", "revision", "segment_id"]]
+    span_sheet = [[
+        "segment_key",
+        "youtube_url",
+        "title",
+        "description",
+        "start_seconds",
+        "end_seconds",
+        "transcript",
+        "span_text",
+        "label",
+        "annotator",
+        "start_char",
+        "end_char",
+    ]]
     ann_rows = [["segment_key", "annotator", "label", "removed_at", "segment_id"]]
     asg_rows = [["segment_key", "assignee", "status", "segment_id"]]
     asr_rows = [["segment_key", "provider", "model", "revision", "aligned", "text", "segment_id"]]
@@ -1064,10 +1178,28 @@ def _render_xlsx(snapshot: dict) -> bytes:
                 segment.get("split") or "",
                 segment["transcript"],
                 "|".join(_labels_for_training(snapshot, segment)),
+                _text_spans_json(segment),
                 segment["definition_revision"],
                 segment["segment_id"],
             ]
         )
+        for span in _active_text_spans(segment):
+            span_sheet.append(
+                [
+                    key,
+                    segment.get("youtube_url") or "",
+                    segment.get("title") or "",
+                    segment.get("description") or "",
+                    segment["start_seconds"],
+                    segment["end_seconds"],
+                    segment.get("transcript") or "",
+                    span["quote"],
+                    span["label"],
+                    span.get("annotator") or "",
+                    span["start_char"],
+                    span["end_char"],
+                ]
+            )
         for row in segment["annotations"]:
             ann_rows.append(
                 [key, row["annotator"], row["label"], row["removed_at"] or "", segment["segment_id"]]
@@ -1099,6 +1231,7 @@ def _render_xlsx(snapshot: dict) -> bytes:
     ]
     sheets = {
         "Segments": segment_rows,
+        "Text spans": span_sheet,
         "Annotations": ann_rows,
         "Assignments": asg_rows,
         "ASR": asr_rows,
@@ -1182,6 +1315,30 @@ def _render_dataset_zip(snapshot: dict) -> bytes:
             "audio_reviewed_at",
             "segment_id",
             "source_id",
+            "title",
+            "channel_name",
+            "description",
+            "text_spans",
+        ]
+    ]
+    span_rows = [
+        [
+            "segment_key",
+            "youtube_url",
+            "title",
+            "description",
+            "channel_name",
+            "start_seconds",
+            "end_seconds",
+            "audio_file",
+            "transcript",
+            "span_text",
+            "span_start",
+            "span_end",
+            "label",
+            "annotator",
+            "segment_id",
+            "span_id",
         ]
     ]
     annotation_rows = [
@@ -1206,6 +1363,7 @@ def _render_dataset_zip(snapshot: dict) -> bytes:
             "duration_seconds",
             "source_status",
             "source_id",
+            "description",
         ]
     ]
     for row in snapshot["sources"]:
@@ -1218,6 +1376,7 @@ def _render_dataset_zip(snapshot: dict) -> bytes:
                 row.get("duration_seconds") or "",
                 row.get("source_status") or "",
                 row["source_id"],
+                row.get("description") or "",
             ]
         )
 
@@ -1266,8 +1425,34 @@ def _render_dataset_zip(snapshot: dict) -> bytes:
                     segment.get("audio_reviewed_at") or "",
                     segment["segment_id"],
                     segment["source_id"],
+                    segment.get("title") or source.get("title") or "",
+                    segment.get("channel_name") or source.get("channel_name") or "",
+                    segment.get("description") or source.get("description") or "",
+                    _text_spans_json(segment),
                 ]
             )
+            audio_path = f"audio/{audio_name}" if audio_name else ""
+            for span in _active_text_spans(segment):
+                span_rows.append(
+                    [
+                        segment.get("segment_key") or "",
+                        source.get("youtube_url") or segment.get("youtube_url") or "",
+                        segment.get("title") or source.get("title") or "",
+                        segment.get("description") or source.get("description") or "",
+                        segment.get("channel_name") or source.get("channel_name") or "",
+                        segment["start_seconds"],
+                        segment["end_seconds"],
+                        audio_path,
+                        segment.get("transcript") or "",
+                        span["quote"],
+                        span["start_char"],
+                        span["end_char"],
+                        span["label"],
+                        span.get("annotator") or "",
+                        segment["segment_id"],
+                        span["span_id"],
+                    ]
+                )
             for ann in segment.get("annotations") or []:
                 annotation_rows.append(
                     [
@@ -1289,6 +1474,7 @@ def _render_dataset_zip(snapshot: dict) -> bytes:
             _csv_bytes(annotation_rows[0], annotation_rows[1:]),
         )
         archive.writestr("sources.csv", _csv_bytes(source_rows[0], source_rows[1:]))
+        archive.writestr("spans.csv", _csv_bytes(span_rows[0], span_rows[1:]))
 
         label_lines = []
         for label in snapshot.get("label_set") or []:
@@ -1320,7 +1506,9 @@ def _render_dataset_zip(snapshot: dict) -> bytes:
                 "## Splits and supervision",
                 "- Prefer `by_source` splits so the same YouTube video never appears in both train and test.",
                 "- Do not randomly split by segment for speech tasks — that leaks acoustic content across folds.",
-                "- Training views use `supervised_labels` (majority by default; `gold` uses OWNER adjudication when present).",
+                "- Training views use `supervised_labels` for the whole segment (majority by default; `gold` uses OWNER adjudication when present).",
+                "- `text_spans` / `spans.csv` are labels on words inside the transcript, such as a toxic token. They are separate from segment labels.",
+                "- `description` is the YouTube video description captured with metadata. Refresh metadata to fill it for older imports.",
                 "- Research JSON keeps full annotation episodes for IAA plus `gold_labels` when adjudicated.",
                 "- `dataset_version` / `content_hash` identify this snapshot; `exported_at` is not part of the hash.",
                 f"- License: {snapshot['project'].get('license') or '—'}",
@@ -1347,9 +1535,10 @@ def _render_dataset_zip(snapshot: dict) -> bytes:
                 "",
                 "## Contents",
                 "- `audio/` — verified current artifacts when available",
-                "- `metadata.csv` — segment provenance and audio paths",
-                "- `annotations.csv` — human annotation episodes",
-                "- `sources.csv` — YouTube source metadata",
+                "- `metadata.csv` — segment provenance, video title and description, audio path, transcript, and text spans",
+                "- `spans.csv` — one row per in-transcript label, with the YouTube link, times, title, description, audio path, and transcript",
+                "- `annotations.csv` — human annotation episodes for the whole segment",
+                "- `sources.csv` — YouTube source metadata, including description",
                 "",
             ]
         )

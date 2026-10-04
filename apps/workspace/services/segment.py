@@ -419,10 +419,17 @@ class SegmentService:
                 segment.processing_status = AudioSegment.ProcessingStatus.PENDING
                 self._request_cancel_active_jobs(segment.id)
 
+            transcript_changed = False
             if transcript is not ...:
+                incoming = "" if transcript is None else str(transcript)
+                transcript_changed = (segment.transcript or "") != incoming
                 segment.transcript = transcript  # type: ignore[assignment]
 
             segment.save()
+            if changed or transcript_changed:
+                from apps.workspace.services.transcript_span import TranscriptSpanService
+
+                TranscriptSpanService().mark_stale(segment.id)
             return segment
 
     def mark_audio_reviewed(

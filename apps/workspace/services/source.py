@@ -13,6 +13,15 @@ from apps.workspace.models import VideoSource
 from apps.workspace.services.membership import MembershipService
 
 
+def video_description(metadata_json: dict[str, Any] | None) -> str:
+    if not isinstance(metadata_json, dict):
+        return ""
+    value = metadata_json.get("description")
+    if not isinstance(value, str):
+        return ""
+    return value
+
+
 class SourceService:
     def __init__(self) -> None:
         self.memberships = MembershipService()

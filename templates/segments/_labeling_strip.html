@@ -44,7 +44,57 @@
     </div>
 
     {% if segment.transcript %}
-    <p class="mb-3" data-testid="labeling-transcript" style="white-space:pre-wrap">{{ segment.transcript }}</p>
+    <div class="transcript-tokens mb-2" id="transcript-tokens" data-testid="transcript-tokens" data-labeling-transcript>{% for tok in transcript_tokens %}{% if tok.is_word %}<span class="tok{% if tok.span_id %} has-span{% endif %}" data-token data-start="{{ tok.start }}" data-end="{{ tok.end }}"{% if tok.span_id %} data-span-id="{{ tok.span_id }}"{% endif %}{% if tok.color %} style="--span-color: {{ tok.color }}"{% endif %}{% if tok.title %} title="{{ tok.title }}"{% endif %}>{{ tok.text }}</span>{% else %}{{ tok.text }}{% endif %}{% endfor %}</div>
+    <p class="small text-muted mb-2">
+      {% if span_chips %}
+      {% trans "Drag across one word or several words, then pick a label. Esc clears the selection." %}
+      {% else %}
+      {% url 'labels' project.id as labels_url %}
+      {% blocktrans %}No text labels yet. On <a href="{{ labels_url }}">Labels</a>, set a label’s scope to “Text in transcript”.{% endblocktrans %}
+      {% endif %}
+    </p>
+    {% if project.status != "ARCHIVED" and span_chips %}
+    <div id="span-label-bar" class="span-label-bar d-none mb-3" data-testid="span-label-bar">
+      <div class="small mb-2">
+        {% trans "Label this phrase" %}:
+        <strong data-span-preview></strong>
+        <span class="text-muted">· {% trans "1–9 or click a label" %}</span>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        {% for chip in span_chips %}
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          data-span-label
+          data-label-id="{{ chip.label.id }}"
+          {% if chip.hotkey %}data-hotkey="{{ chip.hotkey }}"{% endif %}
+        >
+          {% if chip.hotkey %}<kbd class="me-1">{{ chip.hotkey }}</kbd>{% endif %}
+          {{ chip.label.display_name }}
+        </button>
+        {% endfor %}
+        <button type="button" class="btn btn-sm btn-outline-secondary d-none" data-remove-selected-span>
+          {% trans "Remove this phrase label" %}
+        </button>
+      </div>
+    </div>
+    {% endif %}
+    {% if text_spans %}
+    <ul class="list-unstyled d-flex flex-wrap gap-2 mb-3" data-testid="text-span-list">
+      {% for span in text_spans %}
+      <li>
+        <form method="post" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="remove_span">
+          <input type="hidden" name="span_id" value="{{ span.id }}">
+          <button type="submit" class="btn btn-sm btn-outline-secondary" data-testid="remove-text-span">
+            {{ span.quote }} · {{ span.label.display_name }}
+          </button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
     {% if role == "OWNER" and project.status != "ARCHIVED" %}
     <p class="small mb-3"><a href="#transcript-panel">{% trans "Edit transcript" %}</a></p>
     {% endif %}
@@ -57,6 +107,7 @@
 
     {% if project.status != "ARCHIVED" %}
       {% if label_chips %}
+      <p class="small text-muted mb-2">{% trans "Whole segment" %}</p>
       <div class="d-flex flex-wrap gap-2" data-testid="label-chips" data-labeling-hotkeys>
         {% for chip in label_chips %}
           {% if chip.mine %}
@@ -68,6 +119,7 @@
               type="submit"
               class="btn btn-success"
               data-label-chip
+              data-label-id="{{ chip.label.id }}"
               data-hotkey="{{ chip.hotkey|default:'' }}"
               title="{% if chip.hotkey %}{% blocktrans with k=chip.hotkey %}Key {{ k }} — click to remove your label{% endblocktrans %}{% else %}{% trans 'Click to remove your label' %}{% endif %}"
             >
@@ -85,6 +137,7 @@
               type="submit"
               class="btn btn-outline-primary"
               data-label-chip
+              data-label-id="{{ chip.label.id }}"
               data-hotkey="{{ chip.hotkey|default:'' }}"
               title="{% if chip.hotkey %}{% blocktrans with k=chip.hotkey %}Key {{ k }} — assign{% endblocktrans %}{% else %}{% trans 'Assign' %}{% endif %}"
             >

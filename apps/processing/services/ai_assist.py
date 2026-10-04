@@ -211,7 +211,7 @@ class AiAssistService:
             expected_definition_revision=expected_definition_revision,
         )
         input_text = self._require_transcript(segment)
-        catalog = self.labels.list_for_project(source.project_id)
+        catalog = self.labels.list_for_project(source.project_id, scope="segment")
         if not catalog:
             raise ValidationError(
                 "Project has no labels to suggest",
@@ -292,7 +292,7 @@ class AiAssistService:
             if language_hint is not None and str(language_hint).strip()
             else None
         )
-        catalog = self.labels.list_for_project(source.project_id)
+        catalog = self.labels.list_for_project(source.project_id, scope="segment")
         allowed = {lb.display_name.casefold(): lb.display_name for lb in catalog}
         matched_labels = [
             allowed[k.casefold()] for k in keywords if k.casefold() in allowed
@@ -374,8 +374,13 @@ class AiAssistService:
                 )
 
             if run.kind == KIND_TRANSCRIPT_CLEANUP:
+                previous = segment.transcript or ""
                 segment.transcript = run.output_text
                 segment.save(update_fields=["transcript", "updated_at"])
+                if previous != (segment.transcript or ""):
+                    from apps.workspace.services.transcript_span import TranscriptSpanService
+
+                    TranscriptSpanService().mark_stale(segment.id)
             elif run.kind == KIND_LABEL_SUGGEST:
                 self._apply_label_names(
                     segment_id=segment.id,
@@ -423,7 +428,7 @@ class AiAssistService:
             )
         for name in names:
             label = self.labels.find_by_name_ci(project_id, name)
-            if label is None:
+            if label is None or not label.for_segment:
                 continue
             self.annotations.assign(
                 segment_id=segment_id,

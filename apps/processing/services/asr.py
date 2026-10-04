@@ -302,8 +302,13 @@ class AsrService:
                         "is_stale_result": run.is_stale_result,
                     },
                 )
+            previous = segment.transcript or ""
             segment.transcript = run.text
             segment.save(update_fields=["transcript", "updated_at"])
+            if previous != (segment.transcript or ""):
+                from apps.workspace.services.transcript_span import TranscriptSpanService
+
+                TranscriptSpanService().mark_stale(segment.id)
             return segment
 
     def complete_asr(

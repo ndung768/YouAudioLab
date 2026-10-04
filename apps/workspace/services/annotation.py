@@ -118,7 +118,12 @@ class AnnotationService:
                 details={"segment_id": str(segment_id)},
             )
 
-        self._assert_label_in_project(label_id, project_id)
+        label = self._assert_label_in_project(label_id, project_id)
+        if not label.for_segment:
+            raise ValidationError(
+                "This label is for text in the transcript, not the whole segment",
+                details={"label_id": str(label_id), "code": "LABEL_SCOPE"},
+            )
         revision_before = segment.definition_revision
 
         existing = self.get_active(

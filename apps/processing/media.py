@@ -55,6 +55,9 @@ def fetch_source_metadata(
     if not info:
         raise MediaPipelineError("YTDLP_METADATA_FAILED", "No metadata returned")
     duration = info.get("duration")
+    description = info.get("description") or ""
+    if not isinstance(description, str):
+        description = str(description)
     return {
         "title": info.get("title"),
         "channel_name": info.get("channel") or info.get("uploader"),
@@ -65,6 +68,7 @@ def fetch_source_metadata(
             "channel": info.get("channel") or info.get("uploader"),
             "duration": duration,
             "webpage_url": info.get("webpage_url"),
+            "description": description,
         },
     }
 

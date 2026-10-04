@@ -975,7 +975,7 @@ msgstr ""
 msgid "You have no active annotations on this segment."
 msgstr ""
 
-msgid "YouAudioLab · Gate A1 identity"
+msgid "YouAudioLab"
 msgstr ""
 
 msgid "YouTube URL"

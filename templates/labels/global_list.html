@@ -6,7 +6,7 @@
   <div class="page-head">
     <div>
       <h1 class="h4 mb-1"><i class="bi bi-tags"></i> {% trans "Your labels" %}</h1>
-      <p class="text-muted mb-0 small">{% trans "Personal label catalog. Assign labels to projects from each project's label settings." %}</p>
+      <p class="text-muted mb-0 small">{% trans "Personal label catalog. Set whether each label is for the whole audio segment, text in the transcript, or both. Assign labels to projects from each project's label settings." %}</p>
     </div>
     <div class="page-head__actions">
       <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createLabelModal">
@@ -22,6 +22,7 @@
           <tr>
             <th scope="col">{% trans "Color" %}</th>
             <th scope="col">{% trans "Label name" %}</th>
+            <th scope="col">{% trans "Used for" %}</th>
             <th scope="col">{% trans "Description" %}</th>
             <th scope="col">{% trans "Usage count" %}</th>
             <th scope="col">{% trans "Projects" %}</th>
@@ -33,7 +34,7 @@
           {% for label in labels %}
           <tr>
             {% if editing_id == label.id|stringformat:"s" %}
-            <td colspan="7">
+            <td colspan="8">
               <form method="post" class="p-2">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="update">
@@ -42,6 +43,14 @@
                   <div class="col-md-3">
                     <label class="form-label small">{% trans "Label name" %}</label>
                     <input class="form-control form-control-sm" name="name" value="{{ label.name }}" required>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small" for="edit-scope-{{ label.id }}">{% trans "Used for" %}</label>
+                    <select class="form-select form-select-sm" name="default_scope" id="edit-scope-{{ label.id }}" data-testid="edit-default-scope">
+                      <option value="SEGMENT" {% if label.default_scope == "SEGMENT" %}selected{% endif %}>{% trans "Whole segment" %}</option>
+                      <option value="SPAN" {% if label.default_scope == "SPAN" %}selected{% endif %}>{% trans "Text in transcript" %}</option>
+                      <option value="BOTH" {% if label.default_scope == "BOTH" %}selected{% endif %}>{% trans "Both" %}</option>
+                    </select>
                   </div>
                   <div class="col-md-3">
                     <label class="form-label small">{% trans "Description" %}</label>
@@ -65,6 +74,12 @@
                       <label class="form-check-label small" for="active_{{ label.id }}">{% trans "Active" %}</label>
                     </div>
                   </div>
+                  <div class="col-md-4">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="sync_project_scopes" id="sync_{{ label.id }}" value="on">
+                      <label class="form-check-label small" for="sync_{{ label.id }}">{% trans "Also update this label in projects that already use it" %}</label>
+                    </div>
+                  </div>
                   <div class="col-md-2 text-end">
                     <button class="btn btn-primary btn-sm" type="submit">{% trans "Save" %}</button>
                     <a class="btn btn-outline-secondary btn-sm" href="{% url 'global-labels' %}">{% trans "Cancel" %}</a>
@@ -77,6 +92,13 @@
               <span class="label-color-swatch" style="background: {{ label.color|default:'#6c757d' }};"></span>
             </td>
             <td><strong>{{ label.name }}</strong></td>
+            <td>
+              <span class="badge rounded-pill text-bg-light border" data-testid="catalog-label-scope">
+                {% if label.default_scope == "SEGMENT" %}{% trans "Whole segment" %}
+                {% elif label.default_scope == "SPAN" %}{% trans "Text in transcript" %}
+                {% else %}{% trans "Segment + text" %}{% endif %}
+              </span>
+            </td>
             <td class="text-muted small">{{ label.description|default:"—" }}</td>
             <td>
               <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">
@@ -125,7 +147,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" class="text-center text-muted py-5">
+            <td colspan="8" class="text-center text-muted py-5">
               <div data-testid="labels-empty">
                 <p class="mb-1">{% trans "No labels yet" %}</p>
                 <p class="small mb-0">{% trans "Create labels here, then assign them to projects from project label settings." %}</p>
@@ -140,7 +162,7 @@
 
   <div class="alert alert-info d-flex align-items-start gap-2 mt-3 mb-0" role="note">
     <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
-    <span class="small">{% trans "Note: Deactivating a label hides it from “available labels” when adding to new projects. Labels already assigned to projects stay usable. Labels in use cannot be deleted." %}</span>
+    <span class="small">{% trans "Note: “Used for” controls whether the label appears on whole-segment chips, on the text-phrase bar, or both. Deactivating hides it from “available labels” when adding to new projects. Labels already assigned to projects stay usable. Labels in use cannot be deleted." %}</span>
   </div>
 </div>
 
@@ -158,6 +180,15 @@
           <div class="mb-3">
             <label class="form-label" for="label_name">{% trans "Label name" %}</label>
             <input class="form-control" name="name" id="label_name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="label_default_scope">{% trans "Used for" %}</label>
+            <select class="form-select" name="default_scope" id="label_default_scope" data-testid="create-default-scope">
+              <option value="BOTH">{% trans "Both" %}</option>
+              <option value="SEGMENT">{% trans "Whole segment" %}</option>
+              <option value="SPAN">{% trans "Text in transcript" %}</option>
+            </select>
+            <div class="form-text">{% trans "Whole segment = clip chips. Text in transcript = drag words then label. Both = either place." %}</div>
           </div>
           <div class="mb-3">
             <label class="form-label" for="label_description">{% trans "Description" %}</label>

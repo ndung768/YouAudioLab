@@ -12,6 +12,7 @@ from apps.workspace.services.project_stats import ProjectStatsService
 from apps.workspace.services.quality_report import QualityReportService
 from apps.workspace.services.segment import SegmentService
 from apps.workspace.services.source import SourceService
+from apps.workspace.services.transcript_span import TranscriptSpanService
 
 __all__ = [
     "AgreementService",
@@ -28,4 +29,5 @@ __all__ = [
     "QualityReportService",
     "SegmentService",
     "SourceService",
+    "TranscriptSpanService",
 ]
