@@ -16,6 +16,7 @@ the same recording as the training set.
 - [What it does](#what-it-does)
 - [Architecture](#architecture)
 - [Getting started](#getting-started)
+- [Example](#example)
 - [Building a corpus](#building-a-corpus)
 - [Export formats](#export-formats)
 - [Data model](#data-model)
@@ -104,7 +105,7 @@ You need Python 3.12–3.14, FFmpeg on `PATH`, and Docker if you want the bundle
 Postgres and Redis.
 
 ```powershell
-cd YouAudioLab
+cd YouAudioLab_Django
 copy .env.example .env
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -117,6 +118,9 @@ docker compose up -d db redis
 | `DATABASE_URL` | Postgres. The Compose file publishes it on port 5433. |
 | `REDIS_URL` / `CELERY_BROKER_URL` | Redis on port 6381. |
 | `DJANGO_SECRET_KEY` | Signing key. Change it before any shared deployment. |
+| `JWT_SECRET` | Signs API Bearer tokens (HTML pages use the session cookie). |
+| `STORAGE_ROOT` | Local file store for source cache and checksummed WAVs. |
+| `ASR_ENGINE` | Local engine name (`fake` in `.env.example`; use `faster-whisper` when installed). |
 | `ASR_SECRETS_KEY` | Passphrase used to encrypt stored API keys. |
 | `ASR_ADMIN_USER_IDS` | User UUIDs allowed to edit system ASR. Empty in development means every signed-in user. |
 | `AI_ADMIN_USER_IDS` | Same rule for system AI. |
@@ -144,6 +148,16 @@ The app is at **<http://localhost:8001/identity/>**. Health:
 Docker can run the whole stack (`docker compose up --build`) on the same ports.
 That image does not reload when you edit source; use `runserver` while developing.
 
+## Example
+
+A full walk-through of one YouTube cut—protocol, extract, ASR apply, dual
+annotation with optional text spans, and a `by_source` export—is in
+**[docs/EXAMPLE.md](docs/EXAMPLE.md)** (with UI screenshots).
+
+SoftwareX manuscript drafts, figures, and the timing-eval protocol live under
+**[docs/software/](docs/software/)**. The article links to the Example walk-through
+instead of repeating it.
+
 ## Building a corpus
 
 **Create a project and its protocol.** Project settings hold the audio defaults
@@ -152,11 +166,14 @@ annotation), blind labelling, and the corpus license plus consent notes. Those
 notes are copied into exports and the quality report.
 
 **Define labels, then attach them to the project.** A label can carry a
-description and include/exclude guidance. Each project label has a scope:
-*whole segment* (for example `Miền bắc`), *text in transcript* (for example
-`toxic` on the word `dm`), or both. The workspace shows segment-scope labels as
-clip chips and text-scope labels in the phrase bar after you drag across words.
-Agreement, gold, and `supervised_labels` use segment-scope labels only.
+description and include/exclude guidance. Each project label has a
+`LabelScope`: `SEGMENT` (whole clip, for example `Miền bắc`), `SPAN` (text in
+the accepted transcript, for example `toxic` on the word `dm`), or `BOTH`. The
+workspace shows segment-scope labels as clip chips and span-scope labels in the
+phrase bar after you drag across words. Span rows are stored as
+`TranscriptSpan` (character offsets + quote). Changing the accepted transcript
+marks existing spans stale. Agreement, gold, and `supervised_labels` use
+segment-scope labels only; spans travel in the research export and `spans.csv`.
 
 **Add members.** Owners edit cuts, gold, export, and quality. Annotators label.
 System ASR and system AI are a separate allowlist (`ASR_ADMIN_USER_IDS`,
@@ -183,15 +200,18 @@ keeps every episode. Training formats use `supervised_labels`. Prefer
 
 ## Export formats
 
-Formats are views of one snapshot. The unit is the segment.
+Formats are views of one snapshot. The unit is the segment. Research and training
+payloads declare `export_schema` = `youaudiolab.research_dataset` and
+`export_schema_version` = **1.2** (label `scope`, per-segment `text_spans`, and
+`spans.csv` in the zip).
 
 **Research snapshot**
 
 | Key | File | Notes |
 |---|---|---|
-| `json` | `.json` | Full document: segments, annotation episodes, in-transcript spans, video description, assignments, ASR runs, AI assists, split, supervision, `content_hash`. |
+| `json` | `.json` | Full document: segments, annotation episodes, `text_spans`, video description, assignments, ASR runs, AI assists, split, supervision, `content_hash`. |
 | `jsonl` | `.jsonl` | The same segment records, one object per line. |
-| `dataset_zip` | `.zip` | Verified audio, `metadata.csv`, `spans.csv` (YouTube link, times, title, description, transcript, span label), and a README. |
+| `dataset_zip` | `.zip` | Verified audio under `audio/`, `metadata.csv`, `spans.csv` (YouTube link, times, title, description, transcript, span label), and a README. |
 
 **Training**
 
@@ -239,19 +259,21 @@ the snapshot records a warning. `content_hash` ignores `exported_at`.
 
 | Model | Description |
 |---|---|
+| `AppUser` | Account used for membership, annotation, and admin allowlists |
 | `Project` | A study, with language, status, license, and consent notes |
 | `ProjectSettings` | Audio defaults, readiness gates, blind flag, project ASR/AI overrides |
 | `ProjectMembership` | `OWNER` or `ANNOTATOR` |
 | `VideoSource` | One YouTube video and its metadata snapshot |
-| `AudioSegment` | Time bounds, revision, canonical transcript, current artifact |
-| `Label` / `ProjectLabel` | A category and its attachment to a project, with optional display overrides |
+| `AudioSegment` | Time bounds, `definition_revision`, canonical transcript, current artifact |
+| `Label` / `ProjectLabel` | Catalog label and project attachment; `LabelScope` is `SEGMENT`, `SPAN`, or `BOTH` |
 
 **Annotation**
 
 | Model | Description |
 |---|---|
-| `SegmentAnnotation` | One person’s active label on a segment. Soft-removed with `removed_at`. |
-| `SegmentGoldLabel` | Owner-adjudicated label. Hidden from annotators. |
+| `SegmentAnnotation` | One person’s active whole-segment label. Soft-removed with `removed_at`. |
+| `TranscriptSpan` | One person’s label on a character span of the accepted transcript (`start_char` / `end_char` / `quote`). Soft-removed or marked `stale` when the transcript changes. |
+| `SegmentGoldLabel` | Owner-adjudicated segment-scope label. Hidden from annotators. |
 | `AnnotationAssignment` | Work-queue item. Completion is not gold. |
 | `AssignmentBatch` | Owner action that created a group of assignments |
 
@@ -263,10 +285,12 @@ the snapshot records a warning. `content_hash` ignores `exported_at`.
 | `ProcessingArtifact` | Checksummed audio file |
 | `AsrRun` | Immutable ASR candidate; apply copies text onto the transcript |
 | `AiAssistRun` | Optional cleanup or label suggestion |
+| `SourceMediaCache` | Cached yt-dlp download for a source |
 
-The source of truth for human labels is `SegmentAnnotation`. `supervised_labels`
-and `gold_labels` are computed at export time. They are not a second copy that
-annotators edit.
+The source of truth for whole-segment human labels is `SegmentAnnotation`; for
+in-transcript labels it is `TranscriptSpan`. `supervised_labels` and
+`gold_labels` are computed at export time for segment-scope labels only. They
+are not a second copy that annotators edit.
 
 ## API reference
 
@@ -311,7 +335,7 @@ development and test.
 
 | Method | Path | Description | Access |
 |---|---|---|---|
-| GET, POST | `/api/v1/segments/<id>/annotations` | List or assign. Annotators see only their rows when blind is on. | Member |
+| GET, POST | `/api/v1/segments/<id>/annotations` | List or assign whole-segment labels. Annotators see only their rows when blind is on. | Member |
 | DELETE | `/api/v1/annotations/<id>` | Soft-remove an episode | Owner, or the annotator |
 | GET, POST | `/api/v1/projects/<id>/assignments` | Work queue | Member / owner |
 | GET | `/api/v1/export-formats` | Format catalogue | Authenticated |
@@ -323,18 +347,24 @@ Jobs, ASR runs, and AI assists live under `/api/v1/segments/<id>/jobs`,
 `/asr/`, and `/ai/`. System default endpoints are
 `/api/v1/system/asr/defaults` and `/api/v1/system/ai/defaults`.
 
+**Spans and gold** are assigned in the segment workspace HTML
+(`/projects/<id>/segments/<id>/`), not through a separate public REST surface
+in this version. Exports still include `text_spans` and gold-derived
+`supervised_labels` when you download a snapshot.
+
 ## Development
 
 ```
 config/                 Django settings, URLs, Celery
 apps/core/              Errors, auth helpers, storage port, YouTube id parse
-apps/workspace/         Projects, segments, labels, annotation, export, quality
+apps/workspace/         Projects, segments, labels, spans, annotation, export, quality
   services/             Domain logic (export, agreement, gold, readiness, …)
   management/commands/  seed_admin
 apps/processing/        Jobs, artifacts, ASR, AI assist, media pipeline
 templates/              Bootstrap 5 pages
 static/                 CSS and JavaScript
-docs/                   Design notes (export, QC, architecture)
+locale/                 English / Vietnamese message catalogs
+docs/                   Design notes; EXAMPLE.md; software/ (SoftwareX + eval)
 tests/                  pytest
 ```
 
@@ -343,8 +373,11 @@ $env:DATABASE_URL="postgresql://youaudiolab:youaudiolab@localhost:5433/youaudiol
 pytest
 ```
 
-Further design notes: [architecture](docs/architecture.md),
-[export schema](docs/gate-ex1-research-dataset-export-design.md),
+Further notes: [architecture](docs/architecture.md),
+[Example walk-through](docs/EXAMPLE.md),
+[SoftwareX drafts and eval](docs/software/),
+[export design](docs/gate-ex1-research-dataset-export-design.md)
+(historical; shipped schema is **1.2**),
 [splits and supervision](docs/gate-ex3-ml-export-splits.md),
 [blind and IAA](docs/gate-qc1-blind-iaa-progress.md),
 [quality report](docs/gate-qc2-quality-report.md).
@@ -354,7 +387,11 @@ Further design notes: [architecture](docs/architecture.md),
 - In-transcript labels are character spans on the accepted transcript (a word
   or a dragged phrase), not a BIO tag on every token. Agreement and gold still
   apply to the whole segment. Doccano export stays segment classification;
-  span rows are in the research JSON, spaCy entities, and `spans.csv`.
+  span rows are in the research JSON (`text_spans`), spaCy entities, and
+  `spans.csv`.
+- Assigning or removing `TranscriptSpan` rows and saving gold is done in the
+  workspace UI in this version; there is no separate public REST catalogue for
+  those actions yet.
 - YouTube description is stored when metadata is fetched. Videos imported
   before that field existed need a metadata refresh before description appears
   in the export.

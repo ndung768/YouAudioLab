@@ -1,0 +1,75 @@
+{
+  "ready": true,
+  "sample": {
+    "n_segments": 20,
+    "audio_seconds": 437.0,
+    "audio_minutes": 7.28,
+    "mean_segment_s": 21.85,
+    "n_videos": 10,
+    "segment_ids": [
+      "MB_207",
+      "MB_208",
+      "MB_209",
+      "MB_223",
+      "MB_224",
+      "MB_227",
+      "MB_229",
+      "MB_237",
+      "MB_259",
+      "MB_261",
+      "MB_263",
+      "MB_266",
+      "MB_274",
+      "MB_312",
+      "MB_339",
+      "MB_350",
+      "MB_364",
+      "MB_368",
+      "MB_378",
+      "MB_392"
+    ]
+  },
+  "manual": {
+    "n": 20,
+    "total_seconds": 856.161,
+    "total_minutes": 14.27,
+    "mean_seconds_per_segment": 42.81
+  },
+  "tool_human": {
+    "n": 20,
+    "total_seconds": 428.25,
+    "total_minutes": 7.14,
+    "mean_seconds_per_segment": 21.41
+  },
+  "machine": {
+    "n_jobs": 40,
+    "total_seconds": 28.579,
+    "total_minutes": 0.48,
+    "by_type": {
+      "extract": {
+        "n": 20,
+        "total_seconds": 1.846,
+        "total_minutes": 0.03
+      },
+      "asr": {
+        "n": 20,
+        "total_seconds": 26.733,
+        "total_minutes": 0.45
+      }
+    }
+  },
+  "figure4": {
+    "manual_human_minutes": 14.27,
+    "tool_human_minutes": 7.14,
+    "machine_minutes": 0.48,
+    "batch_total_minutes": 7.62
+  },
+  "throughput": {
+    "machine_segments_per_hour": 2500.0
+  },
+  "incomplete": {
+    "manual_missing": [],
+    "tool_human_missing": [],
+    "machine_missing_rows": 0
+  }
+}

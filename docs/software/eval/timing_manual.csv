@@ -1,0 +1,21 @@
+segment_id,started_at,ended_at,duration_s,notes
+MB_207,2026-10-04T08:11:29,2026-10-04T08:12:34,65.117,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_208,2026-10-04T08:12:34,2026-10-04T08:13:10,35.094,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_209,2026-10-04T08:13:10,2026-10-04T08:13:43,33.116,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_223,2026-10-04T08:13:43,2026-10-04T08:14:08,25.133,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_224,2026-10-04T08:14:08,2026-10-04T08:14:51,43.095,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_227,2026-10-04T08:14:51,2026-10-04T08:15:20,29.085,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_229,2026-10-04T08:15:20,2026-10-04T08:15:41,21.107,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_237,2026-10-04T08:15:41,2026-10-04T08:16:24,43.140,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_259,2026-10-04T08:16:24,2026-10-04T08:17:19,55.105,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_261,2026-10-04T08:17:19,2026-10-04T08:18:04,45.118,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_263,2026-10-04T08:18:04,2026-10-04T08:18:50,45.119,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_266,2026-10-04T08:18:50,2026-10-04T08:19:11,21.110,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_274,2026-10-04T08:19:11,2026-10-04T08:19:46,35.071,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_312,2026-10-04T08:19:46,2026-10-04T08:20:21,35.117,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_339,2026-10-04T08:20:21,2026-10-04T08:21:32,71.088,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_350,2026-10-04T08:21:32,2026-10-04T08:22:07,35.118,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_364,2026-10-04T08:22:07,2026-10-04T08:22:54,47.103,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_368,2026-10-04T08:22:54,2026-10-04T08:23:53,59.097,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_378,2026-10-04T08:23:53,2026-10-04T08:24:36,43.117,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2
+MB_392,2026-10-04T08:24:36,2026-10-04T08:25:45,69.111,attended listen×2 (hear + type pass); wall clock via ffmpeg -re; typing concurrent on pass 2

@@ -1,0 +1,41 @@
+job_id,segment_id,job_type,queued_at,started_at,finished_at,duration_s,status,notes
+local-extract-MB_207,MB_207,extract,2026-10-04T08:00:17,2026-10-04T08:00:17,2026-10-04T08:00:17,0.139,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_207,MB_207,asr,2026-10-04T08:00:17,2026-10-04T08:00:17,2026-10-04T08:00:19,2.204,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_208,MB_208,extract,2026-10-04T08:00:19,2026-10-04T08:00:19,2026-10-04T08:00:19,0.080,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_208,MB_208,asr,2026-10-04T08:00:19,2026-10-04T08:00:19,2026-10-04T08:00:20,0.804,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_209,MB_209,extract,2026-10-04T08:00:20,2026-10-04T08:00:20,2026-10-04T08:00:20,0.070,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_209,MB_209,asr,2026-10-04T08:00:20,2026-10-04T08:00:20,2026-10-04T08:00:21,0.686,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_223,MB_223,extract,2026-10-04T08:00:21,2026-10-04T08:00:21,2026-10-04T08:00:21,0.070,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_223,MB_223,asr,2026-10-04T08:00:21,2026-10-04T08:00:21,2026-10-04T08:00:22,0.771,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_224,MB_224,extract,2026-10-04T08:00:22,2026-10-04T08:00:22,2026-10-04T08:00:22,0.111,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_224,MB_224,asr,2026-10-04T08:00:22,2026-10-04T08:00:22,2026-10-04T08:00:23,0.850,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_227,MB_227,extract,2026-10-04T08:00:23,2026-10-04T08:00:23,2026-10-04T08:00:23,0.074,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_227,MB_227,asr,2026-10-04T08:00:23,2026-10-04T08:00:23,2026-10-04T08:00:24,1.099,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_229,MB_229,extract,2026-10-04T08:00:24,2026-10-04T08:00:24,2026-10-04T08:00:24,0.071,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_229,MB_229,asr,2026-10-04T08:00:24,2026-10-04T08:00:24,2026-10-04T08:00:25,0.991,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_237,MB_237,extract,2026-10-04T08:00:25,2026-10-04T08:00:25,2026-10-04T08:00:25,0.080,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_237,MB_237,asr,2026-10-04T08:00:25,2026-10-04T08:00:25,2026-10-04T08:00:27,1.636,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_259,MB_259,extract,2026-10-04T08:00:27,2026-10-04T08:00:27,2026-10-04T08:00:27,0.082,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_259,MB_259,asr,2026-10-04T08:00:27,2026-10-04T08:00:27,2026-10-04T08:00:28,1.858,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_261,MB_261,extract,2026-10-04T08:00:28,2026-10-04T08:00:28,2026-10-04T08:00:29,0.135,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_261,MB_261,asr,2026-10-04T08:00:29,2026-10-04T08:00:29,2026-10-04T08:00:30,1.280,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_263,MB_263,extract,2026-10-04T08:00:30,2026-10-04T08:00:30,2026-10-04T08:00:30,0.074,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_263,MB_263,asr,2026-10-04T08:00:30,2026-10-04T08:00:30,2026-10-04T08:00:31,1.008,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_266,MB_266,extract,2026-10-04T08:00:31,2026-10-04T08:00:31,2026-10-04T08:00:31,0.064,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_266,MB_266,asr,2026-10-04T08:00:31,2026-10-04T08:00:31,2026-10-04T08:00:32,0.904,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_274,MB_274,extract,2026-10-04T08:00:32,2026-10-04T08:00:32,2026-10-04T08:00:32,0.071,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_274,MB_274,asr,2026-10-04T08:00:32,2026-10-04T08:00:32,2026-10-04T08:00:33,1.198,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_312,MB_312,extract,2026-10-04T08:00:33,2026-10-04T08:00:33,2026-10-04T08:00:33,0.072,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_312,MB_312,asr,2026-10-04T08:00:33,2026-10-04T08:00:33,2026-10-04T08:00:34,1.021,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_339,MB_339,extract,2026-10-04T08:00:34,2026-10-04T08:00:34,2026-10-04T08:00:34,0.166,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_339,MB_339,asr,2026-10-04T08:00:34,2026-10-04T08:00:34,2026-10-04T08:00:36,1.267,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_350,MB_350,extract,2026-10-04T08:00:36,2026-10-04T08:00:36,2026-10-04T08:00:36,0.071,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_350,MB_350,asr,2026-10-04T08:00:36,2026-10-04T08:00:36,2026-10-04T08:00:37,1.194,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_364,MB_364,extract,2026-10-04T08:00:37,2026-10-04T08:00:37,2026-10-04T08:00:37,0.113,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_364,MB_364,asr,2026-10-04T08:00:37,2026-10-04T08:00:37,2026-10-04T08:00:39,1.940,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_368,MB_368,extract,2026-10-04T08:00:39,2026-10-04T08:00:39,2026-10-04T08:00:39,0.083,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_368,MB_368,asr,2026-10-04T08:00:39,2026-10-04T08:00:39,2026-10-04T08:00:41,1.570,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_378,MB_378,extract,2026-10-04T08:00:41,2026-10-04T08:00:41,2026-10-04T08:00:41,0.103,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_378,MB_378,asr,2026-10-04T08:00:41,2026-10-04T08:00:41,2026-10-04T08:00:42,1.239,SUCCEEDED,faster-whisper base language=vi
+local-extract-MB_392,MB_392,extract,2026-10-04T08:00:42,2026-10-04T08:00:42,2026-10-04T08:00:42,0.117,SUCCEEDED,local mp3→wav (YouAudioLab extract codec settings); no YouTube download
+local-asr-MB_392,MB_392,asr,2026-10-04T08:00:42,2026-10-04T08:00:42,2026-10-04T08:00:45,3.213,SUCCEEDED,faster-whisper base language=vi
