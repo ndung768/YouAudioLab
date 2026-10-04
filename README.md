@@ -51,36 +51,13 @@ rest. Project settings only choose which provider and model to inherit.
 
 ## Architecture
 
-```mermaid
-flowchart TB
-    Browser["Browser<br/>Bootstrap 5 + vanilla JS"]
+![YouAudioLab architecture: presentation, Django application, data, and processing layers](docs/software/figures/figure1-architecture.png)
 
-    subgraph web["Django process"]
-        Pages["Page views<br/>server-rendered HTML"]
-        API["REST API<br/>Django REST Framework"]
-    end
-
-    DB[("PostgreSQL")]
-    REDIS[("Redis<br/>Celery broker")]
-    WORKER["Celery worker"]
-    YT["yt-dlp"]
-    FF["FFmpeg"]
-    ASR["ASR<br/>local or OpenAI"]
-    LLM["Ollama<br/>optional assist"]
-
-    Browser --> Pages
-    Browser --> API
-    Pages --> DB
-    API --> DB
-    Pages -->|"queue a job"| REDIS
-    API -->|"queue a job"| REDIS
-    REDIS --> WORKER
-    WORKER -->|"metadata, audio, ASR"| DB
-    WORKER --> YT
-    WORKER --> FF
-    WORKER --> ASR
-    WORKER --> LLM
-```
+Six layers: browser (projects, segment workspace with player/transcript/labels,
+members, export), Django pages and REST API over domain services, PostgreSQL,
+file store for source cache and checksummed WAVs, Redis as Celery broker only,
+and workers (yt-dlp, FFmpeg, local or OpenAI ASR, optional Ollama). Regenerate
+with `python docs/software/figures/figure1_architecture.py`.
 
 Pages and the API share the same membership checks. Slow work — metadata,
 audio extract, transcription — runs in Celery. A job stores the segment
@@ -105,7 +82,7 @@ You need Python 3.12–3.14, FFmpeg on `PATH`, and Docker if you want the bundle
 Postgres and Redis.
 
 ```powershell
-cd YouAudioLab_Django
+cd YouAudioLab
 copy .env.example .env
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
