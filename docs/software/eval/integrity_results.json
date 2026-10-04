@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-04T09:28:04Z",
+  "generated_at": "2026-10-04T09:52:53Z",
   "extract": {
     "n_segments": 20,
     "repeats": 3,
@@ -9,11 +9,18 @@
     "max_abs_duration_error_s": 0.0,
     "csv": "D:\\researcher\\YouAudioLab_Django\\docs\\software\\eval\\integrity_extract.csv"
   },
+  "artifact_checksum": {
+    "n_segments": 20,
+    "matched": 20,
+    "mismatches": 0,
+    "protocol": "worker-style publish: put WAV \u2192 publish(checksum=SHA-256(file)) \u2192 re-read storage bytes; assert artifact.checksum == SHA-256(re-read)",
+    "csv": "D:\\researcher\\YouAudioLab_Django\\docs\\software\\eval\\integrity_i2a.csv"
+  },
   "race": {
     "n_trials": 100,
     "stale_publications": 0,
     "protocol": "logical publish-after-revision: submit@R, bound-edit\u2192R+1, late publish; assert job=STALE and current_artifact_id is None (DB state)",
     "check_location": "JobService.publish (select_for_update; expected_revision)",
-    "csv": "D:\\researcher\\YouAudioLab_Django\\docs\\software\\eval\\integrity_race.csv"
+    "csv": "docs\\software\\eval\\integrity_race.csv"
   }
 }

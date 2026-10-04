@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:16.10
     environment:
       POSTGRES_USER: youaudiolab
       POSTGRES_PASSWORD: youaudiolab
@@ -16,7 +16,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:alpine
+    image: redis:7.4-alpine
     ports:
       - "6381:6379"
     healthcheck:

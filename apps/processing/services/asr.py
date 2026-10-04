@@ -294,12 +294,21 @@ class AsrService:
                 run.is_stale_result
                 or run.segment_revision != segment.definition_revision
                 or run.artifact_id != segment.current_artifact_id
+                or (
+                    segment.current_asr_run_id is not None
+                    and run.id != segment.current_asr_run_id
+                )
             ):
                 raise AsrRunNotCurrentError(
                     "ASR run is not current for this segment",
                     details={
                         "asr_run_id": str(run.id),
                         "is_stale_result": run.is_stale_result,
+                        "current_asr_run_id": (
+                            str(segment.current_asr_run_id)
+                            if segment.current_asr_run_id
+                            else None
+                        ),
                     },
                 )
             previous = segment.transcript or ""

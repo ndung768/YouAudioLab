@@ -18,11 +18,16 @@ I2-B + duration — within-environment extract repeatability (no Django):
   where duration_wav is nframes/framerate from the WAV header and
   duration_requested is end_sec - start_sec from the sample CSV
   (equals duration_s for this sample). Does NOT claim YouTube retrieval
-  reproducibility. I2-A (stored_checksum == SHA-256(file)) is enforced at
-  publish time and is not re-verified as a separate pilot row here.
+  reproducibility.
+
+I2-A — artifact checksum re-read (Django + FakeStorage):
+  For each of the N=20 local extracts: put WAV bytes, publish via
+  JobService.publish with the worker-style SHA-256 digest, then re-read
+  storage bytes and assert artifact.checksum == SHA-256(re-read bytes).
 
 Writes:
-  integrity_race.csv / integrity_extract.csv / integrity_results.json
+  integrity_race.csv / integrity_extract.csv / integrity_i2a.csv /
+  integrity_results.json
 """
 from __future__ import annotations
 
@@ -169,6 +174,144 @@ def run_extract_repeatability(
     }
 
 
+def run_artifact_checksum_i2a(
+    sample: Path,
+    work_dir: Path,
+    out_csv: Path,
+    ffmpeg_bin: str,
+) -> dict:
+    """I2-A: persisted artifact.checksum must match a re-read of stored bytes."""
+    if str(REPO) not in sys.path:
+        sys.path.insert(0, str(REPO))
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+
+    import django
+
+    django.setup()
+
+    from apps.core.storage import FakeStorage, set_storage_for_tests
+    from apps.processing.models import ProcessingJob
+    from apps.processing.services.job import JobService
+    from apps.workspace.models import AppUser, VideoSource
+    from apps.workspace.services.project import ProjectService
+    from apps.workspace.services.segment import SegmentService
+    from apps.workspace.services.source import SourceService
+
+    rows = load_sample(sample)
+    work_dir.mkdir(parents=True, exist_ok=True)
+    storage = FakeStorage()
+    set_storage_for_tests(storage)
+    jobs = JobService(storage)
+    segments = SegmentService()
+    sources = SourceService()
+
+    user = AppUser.objects.create(
+        display_name="IntegrityI2A",
+        login_identifier=f"integrity-i2a-{utc_now()}",
+        status=AppUser.Status.ACTIVE,
+    )
+    project = ProjectService().create(
+        name=f"Integrity I2-A {utc_now()}",
+        owner_user_id=user.id,
+        language="vi",
+    )
+    source = sources.import_source(
+        project_id=project.id,
+        youtube_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        actor_user_id=user.id,
+    )
+    source.source_status = VideoSource.Status.READY
+    source.duration_seconds = 10_000.0
+    source.save(update_fields=["source_status", "duration_seconds", "updated_at"])
+
+    records: list[dict] = []
+    mismatches = 0
+    t0 = 1.0
+
+    for row in rows:
+        seg_id = row["segment_id"]
+        mp3 = Path(row["audio_path"])
+        wav = work_dir / seg_id / "i2a.wav"
+        run_extract(mp3, wav, float(row["duration_s"]), ffmpeg_bin)
+        recorded = sha256_file(wav)
+        data = wav.read_bytes()
+
+        segment = segments.create(
+            source_id=source.id,
+            actor_user_id=user.id,
+            start_seconds=t0,
+            end_seconds=t0 + float(row["duration_s"]),
+        )
+        t0 += float(row["duration_s"]) + 1.0
+        job = jobs.submit(
+            segment_id=segment.id,
+            expected_definition_revision=segment.definition_revision,
+            actor_user_id=user.id,
+        )
+        jobs.mark_running(job.id)
+        storage_key = (
+            f"projects/{job.project_id}/segments/{job.segment_id}/jobs/{job.id}/audio.wav"
+        )
+        storage.put(storage_key, data)
+        published = jobs.publish(
+            job.id,
+            storage_key=storage_key,
+            file_size_bytes=len(data),
+            checksum=recorded,
+        )
+        artifact = published.artifact
+        reread = hashlib.sha256(storage.get(storage_key)).hexdigest()
+        ok = (
+            published.status == ProcessingJob.Status.SUCCEEDED
+            and artifact is not None
+            and artifact.checksum == recorded
+            and artifact.checksum == reread
+        )
+        if not ok:
+            mismatches += 1
+        records.append(
+            {
+                "segment_id": seg_id,
+                "job_id": str(job.id),
+                "job_status": published.status,
+                "recorded_sha256": recorded,
+                "artifact_checksum": artifact.checksum if artifact else "",
+                "reread_sha256": reread,
+                "match": "1" if ok else "0",
+            }
+        )
+        print(f"  {seg_id}: I2-A={'OK' if ok else 'FAIL'}")
+
+    with out_csv.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(
+            fh,
+            fieldnames=[
+                "segment_id",
+                "job_id",
+                "job_status",
+                "recorded_sha256",
+                "artifact_checksum",
+                "reread_sha256",
+                "match",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(records)
+
+    set_storage_for_tests(None)
+    n = len(rows)
+    return {
+        "n_segments": n,
+        "matched": n - mismatches,
+        "mismatches": mismatches,
+        "protocol": (
+            "worker-style publish: put WAV → publish(checksum=SHA-256(file)) → "
+            "re-read storage bytes; assert artifact.checksum == SHA-256(re-read)"
+        ),
+        "csv": str(out_csv),
+    }
+
+
 def run_race_trials(n_trials: int, out_csv: Path) -> dict:
     if str(REPO) not in sys.path:
         sys.path.insert(0, str(REPO))
@@ -298,13 +441,14 @@ def main() -> int:
     parser.add_argument("--race-trials", type=int, default=100)
     parser.add_argument("--skip-race", action="store_true")
     parser.add_argument("--skip-extract", action="store_true")
+    parser.add_argument("--skip-i2a", action="store_true")
     parser.add_argument("--out-json", type=Path, default=HERE / "integrity_results.json")
     args = parser.parse_args()
 
     results: dict = {"generated_at": utc_now()}
 
     if not args.skip_extract:
-        print("I2 + duration: within-environment extract repeatability ...")
+        print("I2-B + duration: within-environment extract repeatability ...")
         results["extract"] = run_extract_repeatability(
             sample=args.sample,
             work_dir=args.work_dir,
@@ -320,8 +464,22 @@ def main() -> int:
             f"max |E|={results['extract']['max_abs_duration_error_s']}s"
         )
 
+    if not args.skip_i2a:
+        print("I2-A: artifact checksum re-read after publish ...")
+        results["artifact_checksum"] = run_artifact_checksum_i2a(
+            sample=args.sample,
+            work_dir=args.work_dir,
+            out_csv=HERE / "integrity_i2a.csv",
+            ffmpeg_bin=args.ffmpeg,
+        )
+        print(
+            "  matched: "
+            f"{results['artifact_checksum']['matched']}/"
+            f"{results['artifact_checksum']['n_segments']}"
+        )
+
     if not args.skip_race:
-        print(f"I1: {args.race_trials} logical revision-race trials ...")
+        print(f"I1: {args.race_trials} stale-publication trials ...")
         results["race"] = run_race_trials(
             n_trials=args.race_trials,
             out_csv=HERE / "integrity_race.csv",

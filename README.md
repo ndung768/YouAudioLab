@@ -56,9 +56,7 @@ rest. Project settings only choose which provider and model to inherit.
 Six layers: browser (projects, segment workspace with player/transcript/labels,
 members, export), Django pages and REST API over domain services, PostgreSQL,
 file store for source cache and checksummed WAVs, Redis as Celery broker only,
-and workers (yt-dlp, FFmpeg, local or OpenAI ASR, optional Ollama). Regenerate
-with `python docs/software/figures/figure1_architecture.py`.
-
+and workers (yt-dlp, FFmpeg, local or OpenAI ASR, optional Ollama). 
 Pages and the API share the same membership checks. Slow work — metadata,
 audio extract, transcription — runs in Celery. A job stores the segment
 revision it was started against. If the bounds change before publish, the job
@@ -78,8 +76,15 @@ becomes stale and does not replace the current artifact.
 
 ## Getting started
 
-You need Python 3.12–3.14, FFmpeg on `PATH`, and Docker if you want the bundled
-Postgres and Redis.
+**Docker Compose (recommended full stack).** `docker compose up --build` runs the
+application image (`python:3.12.14-slim` + FFmpeg and app dependencies) together
+with pinned `postgres:16.10` and `redis:7.4-alpine` on the ports above. See
+`docs/software/eval/ENVIRONMENT.md` for the evaluation pin record. That image
+does not reload when you edit source.
+
+**Native development.** Install Python 3.12–3.14 and FFmpeg on `PATH`. Use Docker
+only for the bundled Postgres and Redis (or point `DATABASE_URL` / Redis URLs at
+your own services):
 
 ```powershell
 cd YouAudioLab
@@ -122,8 +127,8 @@ Default seed login is `admin` / `ChangeMe-admin1`. Change that password.
 The app is at **<http://localhost:8001/identity/>**. Health:
 **<http://localhost:8001/api/v1/health>**.
 
-Docker can run the whole stack (`docker compose up --build`) on the same ports.
-That image does not reload when you edit source; use `runserver` while developing.
+Use `runserver` (and a local Celery worker) while developing; use Compose
+`--build` when you want the packaged stack without a host Python/FFmpeg install.
 
 ## Example
 

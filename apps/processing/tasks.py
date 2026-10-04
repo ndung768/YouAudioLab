@@ -114,19 +114,62 @@ def extract_segment_audio(self, job_id: str) -> dict[str, str]:
                 shutil.copy2(downloaded, dest_cache)
             src_path = dest_cache
 
-            checksum = sha256_file(src_path)
+            source_checksum = sha256_file(src_path)
+            source_size = src_path.stat().st_size
             if media_cache is None:
-                SourceMediaCache.objects.create(
+                media_cache = SourceMediaCache.objects.create(
                     source=source,
                     storage_key=storage_key,
-                    file_size_bytes=src_path.stat().st_size,
-                    checksum=checksum,
+                    file_size_bytes=source_size,
+                    checksum=source_checksum,
                 )
             else:
                 media_cache.storage_key = storage_key
-                media_cache.file_size_bytes = src_path.stat().st_size
-                media_cache.checksum = checksum
-                media_cache.save()
+                media_cache.file_size_bytes = source_size
+                media_cache.checksum = source_checksum
+                media_cache.save(
+                    update_fields=[
+                        "storage_key",
+                        "file_size_bytes",
+                        "checksum",
+                        "updated_at",
+                    ]
+                )
+        else:
+            source_checksum = sha256_file(src_path)
+            source_size = src_path.stat().st_size
+            storage_key = media_cache.storage_key
+            if (
+                media_cache.checksum != source_checksum
+                or media_cache.file_size_bytes != source_size
+            ):
+                media_cache.checksum = source_checksum
+                media_cache.file_size_bytes = source_size
+                media_cache.save(
+                    update_fields=["checksum", "file_size_bytes", "updated_at"]
+                )
+
+        ytdlp_version = None
+        try:
+            import yt_dlp
+
+            ytdlp_version = getattr(yt_dlp, "version", None)
+            if ytdlp_version is not None:
+                ytdlp_version = getattr(ytdlp_version, "__version__", None) or str(
+                    ytdlp_version
+                )
+        except Exception:  # noqa: BLE001
+            ytdlp_version = None
+
+        # Pin the exact source bytes used for this extract (video_id alone is not enough).
+        snap = dict(job.config_snapshot or {})
+        snap["source_storage_key"] = storage_key
+        snap["source_checksum"] = source_checksum
+        snap["source_file_size_bytes"] = source_size
+        if ytdlp_version:
+            snap["ytdlp_version"] = ytdlp_version
+        job.config_snapshot = snap
+        job.save(update_fields=["config_snapshot"])
 
         artifact_key = (
             f"projects/{job.project_id}/segments/{job.segment_id}/"

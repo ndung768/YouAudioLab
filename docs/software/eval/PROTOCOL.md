@@ -76,12 +76,18 @@ python docs/software/eval/run_integrity_checks.py
 
 Writes `integrity_race.csv`, `integrity_extract.csv`, `integrity_results.json`.
 Requires PostgreSQL for the stale-publication block (same DB as local Docker).
-I1 is a sequential publish-after-revision rejection test, not a concurrent
-worker interleaving benchmark. Duration error is
+I1 includes sequential publish-after-revision rejection plus a two-transaction
+publish-vs-bound-edit race under `select_for_update`
+(`tests/test_jobs_races.py`; barrier-synchronized DB transactions, not a Celery
+multi-worker stress test). ASR stale completion and late-apply rejection are
+covered by `tests/test_asr_stale.py`. Redistributable synthetic WAVs for
+invariant tests (without the copyrighted pilot MP3s) live in
+`docs/software/eval/fixtures/`. Host/container pins are recorded in
+`ENVIRONMENT.md`. Duration error is
 \(|t_{wav}-(t_{end}-t_{start})|\) from the WAV header; extract repeatability
 (I2-B) is within-environment only (local MP3 → WAV), not live YouTube. I2-A
-(`stored_checksum == SHA-256(file)`) is enforced at publish time and is not a
-separate re-read row in this pilot.
+re-reads storage after `JobService.publish` and asserts
+`artifact.checksum == SHA-256(re-read bytes)` (`integrity_i2a.csv`).
 
 ## Manuscript
 

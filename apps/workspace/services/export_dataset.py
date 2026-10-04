@@ -413,7 +413,11 @@ class ExportService:
                 details={"fields": [{"field": "supervision_policy", "code": "INVALID"}]},
             )
 
-        sources = VideoSource.objects.filter(project_id=project_id).order_by("created_at")
+        sources = (
+            VideoSource.objects.filter(project_id=project_id)
+            .select_related("media_cache")
+            .order_by("created_at")
+        )
         if source_id is not None:
             sources = sources.filter(pk=source_id)
         source_list = list(sources)
@@ -744,6 +748,21 @@ class ExportService:
                     "channel_name": row.channel_name,
                     "duration_seconds": row.duration_seconds,
                     "source_status": row.source_status,
+                    "source_media_checksum": (
+                        row.media_cache.checksum
+                        if getattr(row, "media_cache", None) is not None
+                        else None
+                    ),
+                    "source_media_storage_key": (
+                        row.media_cache.storage_key
+                        if getattr(row, "media_cache", None) is not None
+                        else None
+                    ),
+                    "source_media_file_size_bytes": (
+                        row.media_cache.file_size_bytes
+                        if getattr(row, "media_cache", None) is not None
+                        else None
+                    ),
                 }
                 for row in source_list
             ],
