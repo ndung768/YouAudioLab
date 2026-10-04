@@ -103,7 +103,7 @@ optional character spans—not a text row alone.
 ## Reproduce the demo screenshots
 
 ```powershell
-cd YouAudioLab_Django
+cd YouAudioLab
 docker compose up -d db redis
 python manage.py migrate
 python manage.py seed_admin --write-env

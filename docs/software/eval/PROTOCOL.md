@@ -68,16 +68,20 @@ python docs/software/figures/figure4_review_time.py
 `results.json` is `ready: true` only when both human CSVs are complete. Until
 then Figure 4 draws the machine-only pilot breakdown.
 
-## Integrity (I1 race, I2 extract repeatability, duration \(E_i\))
+## Integrity (I1 stale-publication, I2-B extract repeatability, duration \(E_i\))
 
 ```bash
 python docs/software/eval/run_integrity_checks.py
 ```
 
 Writes `integrity_race.csv`, `integrity_extract.csv`, `integrity_results.json`.
-Requires PostgreSQL for the race block (same DB as local Docker). Duration
-error is \(|t_{wav}-(t_{end}-t_{start})|\) from the WAV header; extract
-repeatability is within-environment only (local MP3 → WAV), not live YouTube.
+Requires PostgreSQL for the stale-publication block (same DB as local Docker).
+I1 is a sequential publish-after-revision rejection test, not a concurrent
+worker interleaving benchmark. Duration error is
+\(|t_{wav}-(t_{end}-t_{start})|\) from the WAV header; extract repeatability
+(I2-B) is within-environment only (local MP3 → WAV), not live YouTube. I2-A
+(`stored_checksum == SHA-256(file)`) is enforced at publish time and is not a
+separate re-read row in this pilot.
 
 ## Manuscript
 

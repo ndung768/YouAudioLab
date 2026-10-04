@@ -1,15 +1,16 @@
 """Software-validation integrity checks for SoftwarX §3 (I1, I2, duration).
 
-I1 — revision race (Django + PostgreSQL):
+I1 — stale-publication check (Django + PostgreSQL):
   For each trial: submit extract job at revision R, edit segment bounds
   (bumps definition_revision to R+1 and clears current artifact), then call
   JobService.publish for the old job. Assert DB state: job=STALE and
-  segment.current_artifact_id is None. This is a logical publish-after-revision
-  race (not a wall-clock sleep, not HTTP). Publish uses select_for_update on
-  segment then job and compares segment.definition_revision to
-  job.expected_revision (apps.processing.services.job.JobService.publish).
+  segment.current_artifact_id is None. This is a sequential stale-job
+  rejection test (not concurrent worker interleaving, not HTTP). Publish uses
+  select_for_update on segment then job and compares
+  segment.definition_revision to job.expected_revision
+  (apps.processing.services.job.JobService.publish).
 
-I2 + duration — within-environment extract repeatability (no Django):
+I2-B + duration — within-environment extract repeatability (no Django):
   On the N=20 local already-cut MP3 sample, run the same FFmpeg convert three
   times per segment (YouAudioLab codec: PCM s16le, 16 kHz, mono). Compare
   SHA-256 of the WAV bytes across the three runs. Duration error is
@@ -17,7 +18,8 @@ I2 + duration — within-environment extract repeatability (no Django):
   where duration_wav is nframes/framerate from the WAV header and
   duration_requested is end_sec - start_sec from the sample CSV
   (equals duration_s for this sample). Does NOT claim YouTube retrieval
-  reproducibility.
+  reproducibility. I2-A (stored_checksum == SHA-256(file)) is enforced at
+  publish time and is not re-verified as a separate pilot row here.
 
 Writes:
   integrity_race.csv / integrity_extract.csv / integrity_results.json
