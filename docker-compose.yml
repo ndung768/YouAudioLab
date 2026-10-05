@@ -1,3 +1,6 @@
+# Host `.env` is used for ${VAR} interpolation AND injected via env_file.
+# Keys under `environment:` override .env (needed for in-compose hostnames).
+
 services:
   db:
     image: postgres:16.10
@@ -29,11 +32,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.docker
-      DJANGO_SECRET_KEY: docker-dev-only
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,web,youaudiolab.duthu.net}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8001,https://youaudiolab.duthu.net}
+      # Override host .env localhost URLs with compose service names.
       DATABASE_URL: postgresql://youaudiolab:youaudiolab@db:5432/youaudiolab_django
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
@@ -60,9 +65,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.docker
-      DJANGO_SECRET_KEY: docker-dev-only
       DATABASE_URL: postgresql://youaudiolab:youaudiolab@db:5432/youaudiolab_django
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
