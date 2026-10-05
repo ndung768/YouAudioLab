@@ -18,7 +18,6 @@ COPY apps /app/apps
 COPY templates /app/templates
 COPY static /app/static
 COPY docs /app/docs
-COPY tests /app/tests
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir ".[dev]"
