@@ -4,7 +4,7 @@ Requires Django DB (docker compose up) and an owner user.
 
 Usage:
 
-  set DJANGO_SETTINGS_MODULE=config.settings.local
+  set DJANGO_SETTINGS_MODULE=config.settings.dev
   python docs/software/eval/seed_timing_project.py --email owner@example.com
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ REPO = HERE.parents[2]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
 
 import django  # noqa: E402
 
@@ -36,7 +36,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sample", type=Path, default=HERE / "sample_segments.csv")
     parser.add_argument("--email", required=True, help="Existing owner user email")
-    parser.add_argument("--name", default="SoftwareX timing pilot N=20")
+    parser.add_argument("--name", default="SoftwareX timing pilot N=60")
     parser.add_argument(
         "--mark-ready",
         action="store_true",

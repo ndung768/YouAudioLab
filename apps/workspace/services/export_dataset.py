@@ -413,6 +413,46 @@ class ExportService:
                 details={"fields": [{"field": "supervision_policy", "code": "INVALID"}]},
             )
 
+        # Collect export rows inside one DB transaction so the in-memory
+        # representation (and content_hash) comes from a single pass.
+        from django.db import transaction
+
+        with transaction.atomic():
+            return self._build_snapshot_locked(
+                project_id=project_id,
+                project=project,
+                source_id=source_id,
+                include_deleted_segments=include_deleted_segments,
+                include_removed_annotations=include_removed_annotations,
+                include_released_assignments=include_released_assignments,
+                include_stale_asr=include_stale_asr,
+                ready_only=ready_only,
+                split_strategy=split_strategy,
+                split_seed=split_seed,
+                split_train=split_train,
+                split_val=split_val,
+                split_test=split_test,
+                supervision_policy=supervision_policy,
+            )
+
+    def _build_snapshot_locked(
+        self,
+        *,
+        project_id: uuid.UUID,
+        project,
+        source_id: uuid.UUID | None,
+        include_deleted_segments: bool,
+        include_removed_annotations: bool,
+        include_released_assignments: bool,
+        include_stale_asr: bool,
+        ready_only: bool,
+        split_strategy: str,
+        split_seed: int,
+        split_train: float,
+        split_val: float,
+        split_test: float,
+        supervision_policy: str,
+    ) -> dict:
         sources = (
             VideoSource.objects.filter(project_id=project_id)
             .select_related("media_cache")

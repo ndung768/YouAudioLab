@@ -1,13 +1,20 @@
-"""Select a fixed pilot sample from audio_manifest.csv."""
+"""Select a fixed pilot sample from a local audio_manifest.csv (not redistributed)."""
+
 from __future__ import annotations
 
 import argparse
 import csv
+import os
 import random
+import sys
 from pathlib import Path
 
-DEFAULT_MANIFEST = Path(r"d:\researcher\audio_manifest.csv")
 HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from sample_paths import audio_relpath_for, canonical_watch_url
+
 DEFAULT_OUT = HERE / "sample_segments.csv"
 
 FIELDNAMES = [
@@ -19,8 +26,20 @@ FIELDNAMES = [
     "start_sec",
     "end_sec",
     "duration_s",
-    "audio_path",
+    "audio_relpath",
 ]
+
+
+def resolve_manifest(explicit: Path | None) -> Path:
+    if explicit is not None:
+        return explicit
+    env = (os.environ.get("YOUAUDIOLAB_AUDIO_MANIFEST") or "").strip()
+    if env:
+        return Path(env)
+    raise SystemExit(
+        "Manifest path required. Pass --manifest PATH or set "
+        "YOUAUDIOLAB_AUDIO_MANIFEST (local file; not redistributed)."
+    )
 
 
 def load_pool(
@@ -43,17 +62,19 @@ def load_pool(
         duration = end - start
         if duration < min_s or duration > max_s:
             continue
+        segment_id = row["id"].strip()
+        video_id = (row.get("video_id") or "").strip()
         pool.append(
             {
-                "segment_id": row["id"].strip(),
+                "segment_id": segment_id,
                 "film": (row.get("film") or "").strip(),
                 "region": (row.get("region") or "").strip(),
-                "url": (row.get("url") or "").strip(),
-                "video_id": (row.get("video_id") or "").strip(),
+                "url": canonical_watch_url(video_id, row.get("url") or ""),
+                "video_id": video_id,
                 "start_sec": start,
                 "end_sec": end,
                 "duration_s": round(duration, 3),
-                "audio_path": (row.get("audio_path") or "").strip(),
+                "audio_relpath": audio_relpath_for(segment_id),
             }
         )
     return pool
@@ -88,7 +109,7 @@ def write_sample(path: Path, rows: list[dict[str, str | float]]) -> None:
                     "start_sec": f"{float(row['start_sec']):.3f}",
                     "end_sec": f"{float(row['end_sec']):.3f}",
                     "duration_s": f"{float(row['duration_s']):.3f}",
-                    "audio_path": row["audio_path"],
+                    "audio_relpath": row["audio_relpath"],
                 }
             )
 
@@ -151,10 +172,10 @@ def main() -> None:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=DEFAULT_MANIFEST,
-        help=f"Path to audio_manifest.csv (default: {DEFAULT_MANIFEST})",
+        default=None,
+        help="Local audio_manifest.csv (or set YOUAUDIOLAB_AUDIO_MANIFEST); not redistributed",
     )
-    parser.add_argument("--n", type=int, default=20)
+    parser.add_argument("--n", type=int, default=60)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--min-s", type=float, default=8.0)
     parser.add_argument("--max-s", type=float, default=45.0)
@@ -172,10 +193,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if not args.manifest.is_file():
-        raise SystemExit(f"Manifest not found: {args.manifest}")
+    manifest = resolve_manifest(args.manifest)
+    if not manifest.is_file():
+        raise SystemExit(f"Manifest not found: {manifest}")
 
-    pool = load_pool(args.manifest, min_s=args.min_s, max_s=args.max_s)
+    pool = load_pool(manifest, min_s=args.min_s, max_s=args.max_s)
     sample = select_sample(pool, n=args.n, seed=args.seed)
     write_sample(args.out, sample)
 

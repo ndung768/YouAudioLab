@@ -1,14 +1,15 @@
-# Pinned evaluation / reproduction environment
+# Evaluation / reproduction environment
 
-This file records the host and container pins used for the SoftwareX software-validation
-pilot and for the recommended Docker Compose stack. Prefer these tags over floating
-`:latest` / unpinned major tags when reproducing.
+This file records the host and container image tags used for the SoftwareX
+software-validation pilot and for the recommended Docker Compose stack. Prefer
+these fixed tags over floating `:latest` / unpinned major tags when reproducing.
+Image digests are not claimed here unless recorded separately.
 
 ## Host machine (pilot reported in the manuscript)
 
 | Item | Value |
 | --- | --- |
-| OS product name | Windows 10 Home Single Language |
+| OS | Windows 11 Home Single Language (registry may still report ProductName as Windows 10; OS build 26200 = Windows 11 25H2) |
 | Display version | 25H2 |
 | Build | 26200.9457 (`NT 10.0.26200`) |
 | Python | 3.12.14 |
@@ -25,7 +26,7 @@ pilot and for the recommended Docker Compose stack. Prefer these tags over float
 Python dependencies for the application are also locked in the repository root
 `uv.lock` (install with `uv sync` or `pip install -e ".[dev]"` from the tagged release).
 
-## Docker Compose pins (`docker-compose.yml`)
+## Docker Compose version-pinned images (`docker-compose.yml`)
 
 | Service | Image tag |
 | --- | --- |

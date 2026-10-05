@@ -11,7 +11,7 @@ I1 — stale-publication check (Django + PostgreSQL):
   (apps.processing.services.job.JobService.publish).
 
 I2-B + duration — within-environment extract repeatability (no Django):
-  On the N=20 local already-cut MP3 sample, run the same FFmpeg convert three
+  On the N=60 local already-cut MP3 sample, run the same FFmpeg convert three
   times per segment (YouAudioLab codec: PCM s16le, 16 kHz, mono). Compare
   SHA-256 of the WAV bytes across the three runs. Duration error is
       E_i = |duration_wav_i - duration_requested_i|
@@ -21,7 +21,7 @@ I2-B + duration — within-environment extract repeatability (no Django):
   reproducibility.
 
 I2-A — artifact checksum re-read (Django + FakeStorage):
-  For each of the N=20 local extracts: put WAV bytes, publish via
+  For each of the N=60 local extracts: put WAV bytes, publish via
   JobService.publish with the worker-style SHA-256 digest, then re-read
   storage bytes and assert artifact.checksum == SHA-256(re-read bytes).
 
@@ -45,6 +45,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from sample_paths import resolve_audio_path
 
 
 def utc_now() -> str:
@@ -108,6 +112,7 @@ def run_extract_repeatability(
     out_csv: Path,
     ffmpeg_bin: str,
     repeats: int,
+    audio_root: Path | None = None,
 ) -> dict:
     rows = load_sample(sample)
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -117,7 +122,7 @@ def run_extract_repeatability(
 
     for row in rows:
         seg_id = row["segment_id"]
-        mp3 = Path(row["audio_path"])
+        mp3 = resolve_audio_path(row, audio_root=audio_root)
         requested = float(row["end_sec"]) - float(row["start_sec"])
         digests: list[str] = []
         durations: list[float] = []
@@ -179,11 +184,12 @@ def run_artifact_checksum_i2a(
     work_dir: Path,
     out_csv: Path,
     ffmpeg_bin: str,
+    audio_root: Path | None = None,
 ) -> dict:
     """I2-A: persisted artifact.checksum must match a re-read of stored bytes."""
     if str(REPO) not in sys.path:
         sys.path.insert(0, str(REPO))
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
 
     import django
 
@@ -230,7 +236,7 @@ def run_artifact_checksum_i2a(
 
     for row in rows:
         seg_id = row["segment_id"]
-        mp3 = Path(row["audio_path"])
+        mp3 = resolve_audio_path(row, audio_root=audio_root)
         wav = work_dir / seg_id / "i2a.wav"
         run_extract(mp3, wav, float(row["duration_s"]), ffmpeg_bin)
         recorded = sha256_file(wav)
@@ -315,7 +321,7 @@ def run_artifact_checksum_i2a(
 def run_race_trials(n_trials: int, out_csv: Path) -> dict:
     if str(REPO) not in sys.path:
         sys.path.insert(0, str(REPO))
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
 
     import django
 
@@ -435,6 +441,12 @@ def run_race_trials(n_trials: int, out_csv: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sample", type=Path, default=HERE / "sample_segments.csv")
+    parser.add_argument(
+        "--audio-root",
+        type=Path,
+        default=None,
+        help="Directory containing local MP3s (or set YOUAUDIOLAB_AUDIO_ROOT)",
+    )
     parser.add_argument("--work-dir", type=Path, default=HERE / "_integrity_work")
     parser.add_argument("--ffmpeg", default="ffmpeg")
     parser.add_argument("--repeats", type=int, default=3)
@@ -455,6 +467,7 @@ def main() -> int:
             out_csv=HERE / "integrity_extract.csv",
             ffmpeg_bin=args.ffmpeg,
             repeats=args.repeats,
+            audio_root=args.audio_root,
         )
         print(
             "  identical checksums: "
@@ -471,6 +484,7 @@ def main() -> int:
             work_dir=args.work_dir,
             out_csv=HERE / "integrity_i2a.csv",
             ffmpeg_bin=args.ffmpeg,
+            audio_root=args.audio_root,
         )
         print(
             "  matched: "

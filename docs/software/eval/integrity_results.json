@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-10-04T09:52:53Z",
+  "generated_at": "2026-10-05T03:07:55Z",
   "extract": {
-    "n_segments": 20,
+    "n_segments": 60,
     "repeats": 3,
-    "checksum_identical_segments": 20,
+    "checksum_identical_segments": 60,
     "checksum_mismatches": 0,
     "mean_abs_duration_error_s": 0.0,
     "max_abs_duration_error_s": 0.0,
     "csv": "D:\\researcher\\YouAudioLab_Django\\docs\\software\\eval\\integrity_extract.csv"
   },
   "artifact_checksum": {
-    "n_segments": 20,
-    "matched": 20,
+    "n_segments": 60,
+    "matched": 60,
     "mismatches": 0,
     "protocol": "worker-style publish: put WAV \u2192 publish(checksum=SHA-256(file)) \u2192 re-read storage bytes; assert artifact.checksum == SHA-256(re-read)",
     "csv": "D:\\researcher\\YouAudioLab_Django\\docs\\software\\eval\\integrity_i2a.csv"
@@ -21,6 +21,6 @@
     "stale_publications": 0,
     "protocol": "logical publish-after-revision: submit@R, bound-edit\u2192R+1, late publish; assert job=STALE and current_artifact_id is None (DB state)",
     "check_location": "JobService.publish (select_for_update; expected_revision)",
-    "csv": "docs\\software\\eval\\integrity_race.csv"
+    "csv": "D:\\researcher\\YouAudioLab_Django\\docs\\software\\eval\\integrity_race.csv"
   }
 }

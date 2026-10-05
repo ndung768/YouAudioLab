@@ -1,32 +1,72 @@
 {
   "ready": false,
   "sample": {
-    "n_segments": 20,
-    "audio_seconds": 437.0,
-    "audio_minutes": 7.28,
-    "mean_segment_s": 21.85,
-    "n_videos": 10,
+    "n_segments": 60,
+    "audio_seconds": 1300.0,
+    "audio_minutes": 21.67,
+    "mean_segment_s": 21.67,
+    "n_videos": 19,
     "segment_ids": [
+      "MB_202",
       "MB_207",
       "MB_208",
       "MB_209",
+      "MB_211",
+      "MB_212",
+      "MB_218",
+      "MB_221",
       "MB_223",
       "MB_224",
+      "MB_225",
       "MB_227",
       "MB_229",
+      "MB_230",
+      "MB_232",
       "MB_237",
+      "MB_240",
+      "MB_242",
+      "MB_243",
+      "MB_253",
+      "MB_254",
       "MB_259",
+      "MB_260",
       "MB_261",
+      "MB_262",
       "MB_263",
       "MB_266",
+      "MB_271",
       "MB_274",
+      "MB_275",
+      "MB_279",
+      "MB_290",
+      "MB_291",
+      "MB_292",
+      "MB_295",
+      "MB_296",
+      "MB_300",
+      "MB_301",
+      "MB_302",
+      "MB_311",
       "MB_312",
+      "MB_313",
+      "MB_323",
+      "MB_326",
       "MB_339",
+      "MB_348",
       "MB_350",
+      "MB_354",
+      "MB_363",
       "MB_364",
+      "MB_367",
       "MB_368",
       "MB_378",
-      "MB_392"
+      "MB_381",
+      "MB_382",
+      "MB_387",
+      "MB_391",
+      "MB_392",
+      "MB_393",
+      "MB_398"
     ]
   },
   "manual": {
@@ -42,30 +82,30 @@
     "mean_seconds_per_segment": null
   },
   "machine": {
-    "n_jobs": 40,
-    "total_seconds": 28.579,
-    "total_minutes": 0.48,
+    "n_jobs": 120,
+    "total_seconds": 141.965,
+    "total_minutes": 2.37,
     "by_type": {
       "extract": {
-        "n": 20,
-        "total_seconds": 1.846,
-        "total_minutes": 0.03
+        "n": 60,
+        "total_seconds": 5.773,
+        "total_minutes": 0.1
       },
       "asr": {
-        "n": 20,
-        "total_seconds": 26.733,
-        "total_minutes": 0.45
+        "n": 60,
+        "total_seconds": 136.192,
+        "total_minutes": 2.27
       }
     }
   },
   "figure4": {
     "manual_human_minutes": null,
     "tool_human_minutes": null,
-    "machine_minutes": 0.48,
+    "machine_minutes": 2.37,
     "batch_total_minutes": null
   },
   "throughput": {
-    "machine_segments_per_hour": 2500.0
+    "machine_segments_per_hour": 1519.0
   },
   "incomplete": {
     "manual_missing": [

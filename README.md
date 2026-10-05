@@ -78,9 +78,9 @@ becomes stale and does not replace the current artifact.
 
 **Docker Compose (recommended full stack).** `docker compose up --build` runs the
 application image (`python:3.12.14-slim` + FFmpeg and app dependencies) together
-with pinned `postgres:16.10` and `redis:7.4-alpine` on the ports above. See
-`docs/software/eval/ENVIRONMENT.md` for the evaluation pin record. That image
-does not reload when you edit source.
+with fixed tags `postgres:16.10` and `redis:7.4-alpine` on the ports above. See
+`docs/software/eval/ENVIRONMENT.md` for the evaluation environment record. That
+image does not reload when you edit source.
 
 **Native development.** Install Python 3.12–3.14 and FFmpeg on `PATH`. Use Docker
 only for the bundled Postgres and Redis (or point `DATABASE_URL` / Redis URLs at

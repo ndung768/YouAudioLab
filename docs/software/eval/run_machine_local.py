@@ -11,12 +11,17 @@ from __future__ import annotations
 import argparse
 import csv
 import subprocess
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from sample_paths import resolve_audio_path
 
 
 def utc_now() -> datetime:
@@ -87,6 +92,12 @@ def run_asr(model, wav: Path) -> tuple[float, str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sample", type=Path, default=HERE / "sample_segments.csv")
+    parser.add_argument(
+        "--audio-root",
+        type=Path,
+        default=None,
+        help="Directory containing local MP3s (or set YOUAUDIOLAB_AUDIO_ROOT)",
+    )
     parser.add_argument("--out", type=Path, default=HERE / "machine_jobs.csv")
     parser.add_argument("--work-dir", type=Path, default=HERE / "_machine_work")
     parser.add_argument("--ffmpeg", default="ffmpeg")
@@ -127,7 +138,7 @@ def main() -> None:
 
     for row in rows:
         seg_id = row["segment_id"]
-        mp3 = Path(row["audio_path"])
+        mp3 = resolve_audio_path(row, audio_root=args.audio_root)
         duration_s = float(row["duration_s"])
         if not mp3.is_file():
             raise SystemExit(f"Missing audio: {mp3}")

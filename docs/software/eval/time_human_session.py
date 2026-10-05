@@ -19,6 +19,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from sample_paths import resolve_audio_path
 
 
 def fmt(ts: float) -> str:
@@ -59,6 +63,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("manual", "tool"), required=True)
     parser.add_argument("--sample", type=Path, default=HERE / "sample_segments.csv")
+    parser.add_argument(
+        "--audio-root",
+        type=Path,
+        default=None,
+        help="Directory containing local MP3s (or set YOUAUDIOLAB_AUDIO_ROOT)",
+    )
     parser.add_argument(
         "--csv",
         type=Path,
@@ -102,7 +112,7 @@ def main() -> None:
             continue
 
         sample = sample_by_id.get(seg_id, {})
-        audio = Path(sample.get("audio_path") or "")
+        audio = resolve_audio_path(sample, audio_root=args.audio_root) if sample else Path()
         print(f"=== {seg_id} ({sample.get('duration_s', '?')}s audio) ===")
         if args.open_audio:
             maybe_open_audio(audio)

@@ -5,7 +5,7 @@ run_machine_local.py instead.
 
 Usage (from repo root, venv active):
 
-  set DJANGO_SETTINGS_MODULE=config.settings.local
+  set DJANGO_SETTINGS_MODULE=config.settings.dev
   python docs/software/eval/export_machine_jobs_from_db.py --project-id <uuid>
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ REPO = HERE.parents[2]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
 
 import django  # noqa: E402
 

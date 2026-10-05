@@ -1,8 +1,9 @@
-# Timing experiment protocol (pilot N=20)
+# Timing experiment protocol (pilot N=60)
 
 Pilot measurement of **YouAudioLab extract + ASR** (and, when filled by a
 human reviewer, manual transcription vs tool review) on a fixed sample from
-[`audio_manifest.csv`](../../../../audio_manifest.csv).
+a local (non-redistributed) `audio_manifest.csv`. Published pilot metadata is
+[`sample_segments.csv`](sample_segments.csv); see [`SAMPLE.md`](SAMPLE.md).
 
 Human stopwatch rows must come from a real editor session
 (`time_human_session.py` or hand-filled CSV). Do **not** invent human times
@@ -10,16 +11,21 @@ from audio duration or automated playback.
 
 ## Sample
 
+Redistributed: `sample_segments.csv` (N=60, seed 42; portable `audio_relpath`).
+Local MP3s are **not** in the repo; point scripts at them with
+`--audio-root` or `YOUAUDIOLAB_AUDIO_ROOT`.
+
+To regenerate the same sample from a private local manifest:
+
 ```bash
-python docs/software/eval/select_sample.py
+python docs/software/eval/select_sample.py --manifest path/to/audio_manifest.csv
 ```
 
-Defaults: `--n 20 --seed 42 --min-s 8 --max-s 45`, manifest at
-`d:\researcher\audio_manifest.csv`.
+Defaults: `--n 60 --seed 42 --min-s 8 --max-s 45`.
 
 Outputs:
 
-- `sample_segments.csv` — selected rows
+- `sample_segments.csv` — selected metadata rows (no machine-absolute paths)
 - Empty templates: `timing_manual.csv`, `timing_tool_human.csv`, `machine_jobs.csv`
 
 Do **not** change the sample mid-experiment.
@@ -65,8 +71,9 @@ python docs/software/eval/summarize_timing.py --allow-partial   # machine-only O
 python docs/software/figures/figure4_review_time.py
 ```
 
-`results.json` is `ready: true` only when both human CSVs are complete. Until
-then Figure 4 draws the machine-only pilot breakdown.
+`results.json` is `ready: true` only when both human CSVs are complete. The
+optional machine-time plot script remains under `docs/software/figures/`; the
+SoftwareX manuscript reports machine times in Table 3 only.
 
 ## Integrity (I1 stale-publication, I2-B extract repeatability, duration \(E_i\))
 
