@@ -57,6 +57,14 @@ def env_int(name: str, default: int) -> int:
     return int(raw)
 
 
+def env_csv(name: str, default: str = "") -> list[str]:
+    """Comma-separated env list; empty/whitespace items dropped; trailing / stripped."""
+    raw = env(name)
+    if raw is None or not str(raw).strip():
+        raw = default
+    return [part.strip().rstrip("/") for part in str(raw).split(",") if part.strip()]
+
+
 def parse_database_url(url: str) -> dict:
     """Accept postgresql:// and postgresql+psycopg:// URLs."""
     normalized = url.replace("postgresql+psycopg://", "postgresql://", 1)
@@ -73,22 +81,11 @@ def parse_database_url(url: str) -> dict:
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = env_bool("DJANGO_DEBUG", False)
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in (env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1") or "").split(",")
-    if host.strip()
-]
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip().rstrip("/")
-    for origin in (
-        env(
-            "CSRF_TRUSTED_ORIGINS",
-            "http://localhost:8001,http://127.0.0.1:8001",
-        )
-        or ""
-    ).split(",")
-    if origin.strip()
-]
+ALLOWED_HOSTS = env_csv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+CSRF_TRUSTED_ORIGINS = env_csv(
+    "CSRF_TRUSTED_ORIGINS",
+    "http://localhost:8001,http://127.0.0.1:8001",
+)
 # Behind nginx/Caddy TLS termination: trust X-Forwarded-Proto for HTTPS detection.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)

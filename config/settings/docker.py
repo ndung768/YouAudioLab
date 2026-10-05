@@ -6,15 +6,11 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in (env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,web") or "").split(",")  # noqa: F405
-    if host.strip()
-]
-_csrf = env("CSRF_TRUSTED_ORIGINS")  # noqa: F405
-if _csrf is not None:
-    CSRF_TRUSTED_ORIGINS = [  # noqa: F405
-        origin.strip().rstrip("/")
-        for origin in _csrf.split(",")
-        if origin.strip()
-    ]
+# Re-read hosts after env_file injection; keep base CSRF_TRUSTED_ORIGINS (do not
+# overwrite with an empty string — that previously collapsed the list to []).
+_hosts = env_csv("DJANGO_ALLOWED_HOSTS")  # noqa: F405
+if _hosts:
+    ALLOWED_HOSTS = _hosts  # noqa: F405
+_csrf = env_csv("CSRF_TRUSTED_ORIGINS")  # noqa: F405
+if _csrf:
+    CSRF_TRUSTED_ORIGINS = _csrf  # noqa: F405
