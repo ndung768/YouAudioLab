@@ -11,3 +11,10 @@ ALLOWED_HOSTS = [
     for host in (env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,web") or "").split(",")  # noqa: F405
     if host.strip()
 ]
+_csrf = env("CSRF_TRUSTED_ORIGINS")  # noqa: F405
+if _csrf is not None:
+    CSRF_TRUSTED_ORIGINS = [  # noqa: F405
+        origin.strip().rstrip("/")
+        for origin in _csrf.split(",")
+        if origin.strip()
+    ]

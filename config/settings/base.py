@@ -78,6 +78,23 @@ ALLOWED_HOSTS = [
     for host in (env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1") or "").split(",")
     if host.strip()
 ]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in (
+        env(
+            "CSRF_TRUSTED_ORIGINS",
+            "http://localhost:8001,http://127.0.0.1:8001",
+        )
+        or ""
+    ).split(",")
+    if origin.strip()
+]
+# Behind nginx/Caddy TLS termination: trust X-Forwarded-Proto for HTTPS detection.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 
 INSTALLED_APPS = [
     "django.contrib.admin",
