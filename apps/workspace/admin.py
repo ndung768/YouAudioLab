@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from apps.workspace.models import (
     AppUser,
@@ -16,9 +17,46 @@ from apps.workspace.models import (
 
 
 @admin.register(AppUser)
-class AppUserAdmin(admin.ModelAdmin):
-    list_display = ("id", "display_name", "login_identifier", "status")
+class AppUserAdmin(DjangoUserAdmin):
+    ordering = ("login_identifier",)
+    list_display = (
+        "login_identifier",
+        "display_name",
+        "status",
+        "is_staff",
+        "is_superuser",
+        "is_active",
+    )
     search_fields = ("display_name", "login_identifier")
+    list_filter = ("status", "is_staff", "is_superuser", "is_active")
+    fieldsets = (
+        (None, {"fields": ("login_identifier", "password")}),
+        ("Profile", {"fields": ("display_name", "status")}),
+        (
+            "Permissions",
+            {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")},
+        ),
+        ("Important dates", {"fields": ("last_login", "created_at", "updated_at")}),
+    )
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "login_identifier",
+                    "display_name",
+                    "password1",
+                    "password2",
+                    "is_staff",
+                    "is_superuser",
+                    "status",
+                ),
+            },
+        ),
+    )
+    readonly_fields = ("created_at", "updated_at", "last_login")
+    filter_horizontal = ("groups", "user_permissions")
 
 
 @admin.register(Project)

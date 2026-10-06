@@ -211,9 +211,10 @@ def run_artifact_checksum_i2a(
     segments = SegmentService()
     sources = SourceService()
 
-    user = AppUser.objects.create(
+    user = AppUser.objects.create_user(
         display_name="IntegrityI2A",
         login_identifier=f"integrity-i2a-{utc_now()}",
+        password=None,
         status=AppUser.Status.ACTIVE,
     )
     project = ProjectService().create(
@@ -341,9 +342,10 @@ def run_race_trials(n_trials: int, out_csv: Path) -> dict:
     segments = SegmentService()
     sources = SourceService()
 
-    user = AppUser.objects.create(
+    user = AppUser.objects.create_user(
         display_name="IntegrityRace",
         login_identifier=f"integrity-race-{utc_now()}",
+        password=None,
         status=AppUser.Status.ACTIVE,
     )
     project = ProjectService().create(

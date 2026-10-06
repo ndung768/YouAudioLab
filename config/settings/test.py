@@ -7,7 +7,10 @@ ENVIRONMENT = "test"
 DEBUG = True
 CELERY_ENQUEUE_ENABLED = False
 CELERY_TASK_ALWAYS_EAGER = False
-PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.MD5PasswordHasher",
+    "apps.core.hashers.LegacyBcryptPasswordHasher",
+]
 
 if os.environ.get("DATABASE_URL"):
     DATABASES = {"default": parse_database_url(os.environ["DATABASE_URL"])}

@@ -123,7 +123,9 @@ celery -A config.celery worker --loglevel=info --pool=solo
 ```
 
 Restart the server after `--write-env` so the admin UUIDs in `.env` load.
-Default seed login is `admin` / `ChangeMe-admin1`. Change that password.
+Default seed login is `admin` / `demo@123`. Change that password.
+The same seeded user is Django `AUTH_USER_MODEL` (`workspace.AppUser`) with
+`is_staff` / `is_superuser`, so it can also open **<http://localhost:8001/admin/>**.
 The app is at **<http://localhost:8001/identity/>**. Health:
 **<http://localhost:8001/api/v1/health>**.
 

@@ -2,7 +2,7 @@
 
 Usage:
   python manage.py seed_admin
-  python manage.py seed_admin --login admin --password 'ChangeMe-admin1' --write-env
+  python manage.py seed_admin --login admin --password 'demo@123' --write-env
 
 Idempotent: existing login is updated (password reset optional) and admin IDs are merged.
 """
@@ -16,12 +16,11 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.core.passwords import hash_password
 from apps.workspace.models import AppUser
 
 DEFAULT_LOGIN = "admin"
 DEFAULT_NAME = "System Admin"
-DEFAULT_PASSWORD = "ChangeMe-admin1"
+DEFAULT_PASSWORD = "demo@123"
 
 
 def _parse_id_list(raw: str | None) -> list[str]:
@@ -109,10 +108,10 @@ class Command(BaseCommand):
         user = AppUser.objects.filter(login_identifier=login).first()
         created = False
         if user is None:
-            user = AppUser.objects.create(
-                display_name=display_name,
+            user = AppUser.objects.create_superuser(
                 login_identifier=login,
-                password_hash=hash_password(password),
+                display_name=display_name,
+                password=password,
                 status=AppUser.Status.ACTIVE,
             )
             created = True
@@ -125,8 +124,14 @@ class Command(BaseCommand):
             if user.status != AppUser.Status.ACTIVE:
                 user.status = AppUser.Status.ACTIVE
                 changed = True
-            if options["reset_password"] or not user.password_hash:
-                user.password_hash = hash_password(password)
+            if not user.is_staff:
+                user.is_staff = True
+                changed = True
+            if not user.is_superuser:
+                user.is_superuser = True
+                changed = True
+            if options["reset_password"] or not user.has_usable_password():
+                user.set_password(password)
                 changed = True
                 self.stdout.write(self.style.WARNING(f"Password reset for {login}"))
             if changed:

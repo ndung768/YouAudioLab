@@ -10,6 +10,7 @@ x-app-code: &app-code
   - ./static:/app/static
   - ./manage.py:/app/manage.py
   - ./locale:/app/locale
+  - ./.env:/app/.env
   - youaudiolab_django_storage:/data/storage
 
 services:
@@ -68,7 +69,7 @@ services:
       [
         "sh",
         "-c",
-        "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8001 --reload",
+        "python manage.py migrate && python manage.py seed_admin --write-env && export ASR_ADMIN_USER_IDS=\"$(grep -E '^ASR_ADMIN_USER_IDS=' .env | cut -d= -f2-)\" && export AI_ADMIN_USER_IDS=\"$(grep -E '^AI_ADMIN_USER_IDS=' .env | cut -d= -f2-)\" && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8001 --reload",
       ]
 
   worker:

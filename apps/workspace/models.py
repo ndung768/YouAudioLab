@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -17,8 +18,67 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
-class AppUser(TimeStampedModel):
-    """Domain identity (not django.contrib.auth). Gate A1: password + JWT."""
+class AppUserManager(BaseUserManager):
+    use_in_migrations = True
+
+    def _create_user(
+        self,
+        login_identifier: str,
+        display_name: str,
+        password: str | None,
+        **extra_fields,
+    ):
+        login = (login_identifier or "").strip().lower()
+        name = (display_name or "").strip()
+        if not login:
+            raise ValueError("login_identifier is required")
+        if not name:
+            raise ValueError("display_name is required")
+        status = extra_fields.pop("status", AppUser.Status.ACTIVE)
+        extra_fields.setdefault("is_active", status == AppUser.Status.ACTIVE)
+        user = self.model(
+            login_identifier=login,
+            display_name=name,
+            status=status,
+            **extra_fields,
+        )
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+        user.save(using=self._db)
+        return user
+
+    def create_user(
+        self,
+        login_identifier: str,
+        display_name: str,
+        password: str | None = None,
+        **extra_fields,
+    ):
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+        return self._create_user(login_identifier, display_name, password, **extra_fields)
+
+    def create_superuser(
+        self,
+        login_identifier: str,
+        display_name: str,
+        password: str | None = None,
+        **extra_fields,
+    ):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("status", AppUser.Status.ACTIVE)
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+        return self._create_user(login_identifier, display_name, password, **extra_fields)
+
+
+class AppUser(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
+    """AUTH_USER_MODEL — Gate A1 password + JWT; HTML uses Django session auth."""
 
     class Status(models.TextChoices):
         ACTIVE = "ACTIVE", "Active"
@@ -27,8 +87,18 @@ class AppUser(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     display_name = models.CharField(max_length=255)
     login_identifier = models.CharField(max_length=255, unique=True)
-    password_hash = models.CharField(max_length=255, null=True, blank=True)
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.ACTIVE)
+    # Django 6 AbstractBaseUser only sets is_active as a class attribute; store it.
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Designates whether this user should be treated as active.",
+    )
+    is_staff = models.BooleanField(default=False)
+
+    objects = AppUserManager()
+
+    USERNAME_FIELD = "login_identifier"
+    REQUIRED_FIELDS = ["display_name"]
 
     class Meta:
         db_table = "users"
@@ -41,6 +111,13 @@ class AppUser(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.display_name
+
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.ACTIVE:
+            self.is_active = True
+        elif self.status == self.Status.INACTIVE:
+            self.is_active = False
+        super().save(*args, **kwargs)
 
 
 class Project(TimeStampedModel):

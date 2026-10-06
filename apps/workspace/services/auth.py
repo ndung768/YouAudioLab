@@ -6,11 +6,20 @@ import re
 import uuid
 
 from apps.core.errors import ConflictError, NotFoundError, UnauthorizedError, ValidationError
-from apps.core.passwords import hash_password, verify_password
 from apps.core.tokens import create_access_token
 from apps.workspace.models import AppUser
 
 _LOGIN_RE = re.compile(r"^[^\s]{3,255}$")
+# Reserved for seed_admin / system use — not available via public register.
+_RESERVED_LOGINS = frozenset(
+    {
+        "admin",
+        "administrator",
+        "root",
+        "system",
+        "youaudiolab",
+    }
+)
 
 
 class AuthService:
@@ -33,6 +42,11 @@ class AuthService:
                 "login_identifier must be 3–255 non-whitespace characters",
                 details={"fields": [{"field": "login_identifier", "code": "INVALID"}]},
             )
+        if login in _RESERVED_LOGINS:
+            raise ValidationError(
+                "login_identifier is reserved",
+                details={"fields": [{"field": "login_identifier", "code": "RESERVED"}]},
+            )
         if len(password or "") < 8:
             raise ValidationError(
                 "password must be at least 8 characters",
@@ -43,10 +57,10 @@ class AuthService:
                 "login_identifier already exists",
                 details={"login_identifier": login},
             )
-        user = AppUser.objects.create(
-            display_name=name,
+        user = AppUser.objects.create_user(
             login_identifier=login,
-            password_hash=hash_password(password),
+            display_name=name,
+            password=password,
             status=AppUser.Status.ACTIVE,
         )
         return user, create_access_token(user_id=user.id)
@@ -57,7 +71,8 @@ class AuthService:
         if (
             user is None
             or user.status != AppUser.Status.ACTIVE
-            or not verify_password(password, user.password_hash)
+            or not user.is_active
+            or not user.check_password(password)
         ):
             raise UnauthorizedError("Invalid login or password")
         return user, create_access_token(user_id=user.id)
