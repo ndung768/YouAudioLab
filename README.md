@@ -17,10 +17,8 @@ A hosted workspace is at **[https://youaudiolab.duthu.net/](https://youaudiolab.
 
 | Field | Value |
 |---|---|
-| Login identifier | `admin` |
-| Password | `demo@123` |
-
-Local `seed_admin` creates the same login. Change that password on any install you control.
+| Login identifier | `hoangduy0610` |
+| Password | `Duy@06102004` |
 
 ## Contents
 
@@ -65,6 +63,8 @@ rest. Project settings only choose which provider and model to inherit.
 
 ![YouAudioLab architecture: presentation, Django application, data, and processing layers](docs/software/figures/figure1-architecture.png)
 
+*Figure 1. Overall architecture of YouAudioLab.*
+
 Six layers: browser (projects, segment workspace with player/transcript/labels,
 members, export), Django pages and REST API over domain services, PostgreSQL,
 file store for source cache and checksummed WAVs, Redis as Celery broker only,
@@ -85,6 +85,10 @@ becomes stale and does not replace the current artifact.
 | Frontend | Bootstrap 5 and vanilla JavaScript |
 | Languages | English and Vietnamese |
 | Local ports | HTTP **8001**, Postgres **5433**, Redis **6381** |
+
+![Four-phase workflow of YouAudioLab: revision-checked extraction, transcription review, annotation, and audio-inclusive dataset export](docs/software/figures/Figure%202.%20Four-phase%20workflow%20of%20YouAudioLab%20-%20revision-checked%20extraction%20transcription%20review%20annotation%20and%20audio-inclusive%20dataset%20export.png)
+
+*Figure 2. Four-phase workflow of YouAudioLab: revision-checked extraction, transcription review, annotation, and audio-inclusive dataset export.*
 
 ## Getting started
 
@@ -135,9 +139,9 @@ celery -A config.celery worker --loglevel=info --pool=solo
 ```
 
 Restart the server after `--write-env` so the admin UUIDs in `.env` load.
-Default seed login is `admin` / `demo@123` — the same account as the
-[live demo](https://youaudiolab.duthu.net/). Change that password on any
-install you control.
+Default seed login is `admin` / `demo@123`. Change that password on any
+install you control. The [live demo](https://youaudiolab.duthu.net/) uses a
+separate hosted account (`hoangduy0610`).
 The same seeded user is Django `AUTH_USER_MODEL` (`workspace.AppUser`) with
 `is_staff` / `is_superuser`, so it can also open **<http://localhost:8001/admin/>**.
 The app is at **<http://localhost:8001/identity/>**. Health:
