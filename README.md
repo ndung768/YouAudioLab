@@ -61,7 +61,7 @@ rest. Project settings only choose which provider and model to inherit.
 
 ## Architecture
 
-![YouAudioLab architecture: presentation, Django application, data, and processing layers](docs/software/figures/figure1-architecture.png)
+<img src="docs/software/figures/figure1-architecture.png" alt="YouAudioLab architecture: presentation, Django application, data, and processing layers" width="560" />
 
 *Figure 1. Overall architecture of YouAudioLab.*
 
@@ -74,6 +74,10 @@ audio extract, transcription — runs in Celery. A job stores the segment
 revision it was started against. If the bounds change before publish, the job
 becomes stale and does not replace the current artifact.
 
+<img src="docs/software/figures/Figure%202.%20Four-phase%20workflow%20of%20YouAudioLab%20-%20revision-checked%20extraction%20transcription%20review%20annotation%20and%20audio-inclusive%20dataset%20export.png" alt="Four-phase workflow of YouAudioLab: revision-checked extraction, transcription review, annotation, and audio-inclusive dataset export" width="640" />
+
+*Figure 2. Four-phase workflow of YouAudioLab: revision-checked extraction, transcription review, annotation, and audio-inclusive dataset export.*
+
 | Component | Choice |
 |---|---|
 | Framework | Django 6.1, Django REST Framework 3.18 |
@@ -85,10 +89,6 @@ becomes stale and does not replace the current artifact.
 | Frontend | Bootstrap 5 and vanilla JavaScript |
 | Languages | English and Vietnamese |
 | Local ports | HTTP **8001**, Postgres **5433**, Redis **6381** |
-
-![Four-phase workflow of YouAudioLab: revision-checked extraction, transcription review, annotation, and audio-inclusive dataset export](docs/software/figures/Figure%202.%20Four-phase%20workflow%20of%20YouAudioLab%20-%20revision-checked%20extraction%20transcription%20review%20annotation%20and%20audio-inclusive%20dataset%20export.png)
-
-*Figure 2. Four-phase workflow of YouAudioLab: revision-checked extraction, transcription review, annotation, and audio-inclusive dataset export.*
 
 ## Getting started
 
