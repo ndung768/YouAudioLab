@@ -21,8 +21,7 @@ docs/software/figures/*.*
 docs/software/figures/icons/*.*
 !docs/Example.md
 !docs/software/figures/appendix/*
-!docs/software/figures/figure1-architecture.png
-!docs/software/figures/figure1-architecture.svg
+!docs/software/figures/*.png
 !docs/software/eval/*
 docs/software/eval/_machine_work/
 docs/software/eval/_integrity_work/

@@ -173,6 +173,10 @@ clips.
 
 ### Software validation
 
+![Integrity and consistency verification workflow of YouAudioLab](docs/software/figures/Figure%203.%20Integrity%20and%20consistency%20verification%20workflow%20of%20YouAudioLab.png)
+
+*Figure 3. Integrity and consistency verification workflow of YouAudioLab.*
+
 Machine timing used pre-extracted local MP3 clips and faster-whisper `base`
 (Vietnamese, CPU, INT8). The 2.37 min total is summed worker wall-clock for
 MP3-to-16 kHz mono WAV conversion (0.10 min) plus that recogniser (2.27 min).
@@ -196,6 +200,10 @@ and fixtures.
 | Export provenance | Automated export test | JSON and ZIP kept source, revision, checksum, transcript, annotations, gold, and split; ZIP WAV checksums matched the stored artifacts |
 
 ### Exploratory human–AI session
+
+![Workflow for comparing manual and AI-assisted audio annotation in YouAudioLab](docs/software/figures/Figure%204.%20Workflow%20for%20comparing%20manual%20and%20AI-assisted%20audio%20annotation%20in%20YouAudioLab.png)
+
+*Figure 4. Workflow for comparing manual and AI-assisted audio annotation in YouAudioLab.*
 
 This session uses other models than the timing run: PhoWhisper-small drafts the
 transcript, and GPT-5.6-luna proposes whole-segment labels. One annotator first
@@ -225,6 +233,12 @@ Exact label sets matched on 52 segments and exact transcripts on 31, so
 segment-level transcript review still matters on this sample. The same person
 heard the same audio twice, manual pass first. The 5,048 s gap (50.72% of the
 manual pass) describes that order of work.
+
+Download the exported pilot package for this comparison:
+[Speech Emotion-dataset_zip.zip](docs/software/eval/manually_assited_comparison/Speech%20Emotion-dataset_zip.zip)
+(companion CSVs and the evaluation workbook are in the same
+[manually_assited_comparison](docs/software/eval/manually_assited_comparison/)
+folder).
 
 ## Building a corpus
 
