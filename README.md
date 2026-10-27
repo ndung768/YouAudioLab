@@ -11,12 +11,24 @@ It was built for speech and audio NLP research, where the scarce resource is a
 corpus you can defend: known cuts, known annotators, and a holdout that is not
 the same recording as the training set.
 
+## Live demo
+
+A hosted workspace is at **[https://youaudiolab.duthu.net/](https://youaudiolab.duthu.net/)**.
+
+| Field | Value |
+|---|---|
+| Login identifier | `admin` |
+| Password | `demo@123` |
+
+Local `seed_admin` creates the same login. Change that password on any install you control.
+
 ## Contents
 
 - [What it does](#what-it-does)
 - [Architecture](#architecture)
 - [Getting started](#getting-started)
 - [Example](#example)
+- [Illustrative evaluation](#illustrative-evaluation)
 - [Building a corpus](#building-a-corpus)
 - [Export formats](#export-formats)
 - [Data model](#data-model)
@@ -123,7 +135,9 @@ celery -A config.celery worker --loglevel=info --pool=solo
 ```
 
 Restart the server after `--write-env` so the admin UUIDs in `.env` load.
-Default seed login is `admin` / `demo@123`. Change that password.
+Default seed login is `admin` / `demo@123` — the same account as the
+[live demo](https://youaudiolab.duthu.net/). Change that password on any
+install you control.
 The same seeded user is Django `AUTH_USER_MODEL` (`workspace.AppUser`) with
 `is_staff` / `is_superuser`, so it can also open **<http://localhost:8001/admin/>**.
 The app is at **<http://localhost:8001/identity/>**. Health:
@@ -141,6 +155,76 @@ annotation with optional text spans, and a `by_source` export—is in
 SoftwareX manuscript drafts, figures, and the timing-eval protocol live under
 **[docs/software/](docs/software/)**. The article links to the Example walk-through
 instead of repeating it.
+
+## Illustrative evaluation
+
+Version 0.1.0 reports two separate checks. They share a pilot sample and use
+different procedures. The speech models differ as well. Logs and the
+environment record are under [docs/software/eval/](docs/software/eval/). Confirm
+the figures there before quoting them; this section is a summary.
+
+The shared sample is **60 segments** (21.67 min of audio; mean duration 21.7 s)
+from **19 YouTube videos** of Northern Vietnamese drama dialogue (*Về nhà đi
+con*). Metadata and timestamps are in
+[docs/software/eval/sample_segments.csv](docs/software/eval/sample_segments.csv)
+(seed 42). The original MP3/WAV clips are not redistributed; figures that
+depend on those bytes are reproducible only against a local copy of the same
+clips.
+
+### Software validation
+
+Machine timing used pre-extracted local MP3 clips and faster-whisper `base`
+(Vietnamese, CPU, INT8). The 2.37 min total is summed worker wall-clock for
+MP3-to-16 kHz mono WAV conversion (0.10 min) plus that recogniser (2.27 min).
+Live YouTube retrieval, queue waiting, and human review sit outside the sum.
+Host pins for that run: Windows 11, YouAudioLab 0.1.0, Python 3.12.14,
+FFmpeg 7.1.1 ([docs/software/eval/ENVIRONMENT.md](docs/software/eval/ENVIRONMENT.md)).
+
+Each row names where that figure was measured. Timing, checksum, and the
+FFmpeg repeat use the 60 clips. Stale publication, blind labelling, the
+source-video split, and export provenance are automated tests on PostgreSQL
+and fixtures.
+
+| Check | Where it was measured | Result |
+|---|---|---|
+| Worker time, extract + ASR | 60 local clips, faster-whisper `base` | 2.37 min; 120/120 jobs succeeded; 0 retries; 0 failed |
+| Artifact checksum | 60 published WAVs from those clips | 60/60 matched the stored SHA-256 |
+| FFmpeg repeat, 3 runs | Same 60 clips, one environment | 60/60 identical SHA-256 |
+| Stale publication | 100 sequential revision-change trials, plus a PostgreSQL row-lock race | 0 stale files published. This is a transactional check, not a multi-worker load test |
+| Blind labelling | Automated PostgreSQL test | 0 overwrites; annotator rows kept after gold assignment |
+| Source-video split | Automated export test, seed 42 | 0 videos shared across splits |
+| Export provenance | Automated export test | JSON and ZIP kept source, revision, checksum, transcript, annotations, gold, and split; ZIP WAV checksums matched the stored artifacts |
+
+### Exploratory human–AI session
+
+This session uses other models than the timing run: PhoWhisper-small drafts the
+transcript, and GPT-5.6-luna proposes whole-segment labels. One annotator first
+transcribed and labelled the same 60 segments by hand. On the second pass the
+segment order was changed, the first pass was hidden, and the annotator
+reviewed those suggestions. The manual label set is that person’s first pass,
+used as the reference for this comparison. It is a single-annotator reference
+on this sample.
+
+Cohen’s κ treats each whole-segment label set as one nominal category.
+Transcript comparison counts words after lowercasing, punctuation removal, and
+whitespace normalisation. Insertions and deletions were not counted separately,
+so the word figure is an overlap rate. The label inventory and class balance
+are not part of this summary. With chance agreement pₑ = 0.2194, κ sits above
+the raw match rate because agreement expected by chance on these set-categories
+is low.
+
+| Metric | Result |
+|---|---|
+| Exact label-set matches | 52 / 60 (0.8667) |
+| Cohen’s κ | 0.8292 (pₑ = 0.2194) |
+| Exact transcript matches | 31 / 60 (0.5167) |
+| Word overlap | 2,934 / 3,047 reference words (0.9629), with 113 substitutions reported |
+| Session time | 9,953 s on the manual pass; 4,905 s on the later AI-assisted pass |
+
+Exact label sets matched on 52 segments and exact transcripts on 31, so
+segment-level transcript review still matters on this sample. The same person
+heard the same audio twice, manual pass first. The 5,048 s gap (50.72% of the
+manual pass) describes that order of work.
 
 ## Building a corpus
 
