@@ -1,123 +1,164 @@
-# Example: one VietRegDialog cut through YouAudioLab
+# Example: inspecting the VietRegDialog pilot UI
 
-This walk-through follows one YouTube cut from the **VietRegDialog** regional
-speech inventory and the records written for that cut. It is documentation for
-the repository, not a timed user study. The SoftwareX manuscript points here
-instead of embedding screenshots in the article.
+This page is an **interface inspection** of the hosted project
+**[VietRegDialog — Về nhà đi con (Miền Bắc)](https://youaudiolab.duthu.net/projects/92652c59-5d8d-4223-9b5a-7ece25f8a591/)**.
+It shows how protocol, verified audio, labels, gold, and export look in the
+product UI. It is **not** a reproduction of manuscript §3.1 machine timing or
+checksum trials, and it is **not** the §3.2 human–AI session. Those numbers
+live in the manuscript and in
+[README — Illustrative evaluation](../README.md#illustrative-evaluation).
 
-The cut is **Miền Bắc** dialogue from the film *Về nhà đi con*
-(`audio_manifest.csv` id `MB_219`, YouTube `wNz1nnglh8A`, **1435.0–1447.0 s**,
-12 s). Project labels are the three region classes from
-`VietRegDialog.xlsx`: `Miền bắc`, `Miền nam`, and `Miền trung` (whole-segment
-scope). Interface figures under
+Sign in with the [live demo account](../README.md#live-demo)
+(`hoangduy0610`). Appendix screenshots under
 [`software/figures/appendix/`](software/figures/appendix/) were captured from
-the seeded **VietRegDialog demo** project
-(`docs/software/figures/seed_appendix_demo.py`).
+this project on **27 Oct 2026**. If the live host changes, treat those PNGs as
+the frozen UI reference; the URLs below are convenience links only.
+
+The SoftwareX manuscript points here instead of embedding UI figures in the
+article. The intended flow to read against §3.1 capabilities is: protocol →
+source and cut → verified artifact → accepted transcript → labels / gold →
+`by_source` export. Steps below mostly **inspect a pilot already built on the
+host**, rather than clicking import → extract from an empty project.
+
+## Sample shared with the evaluation
+
+| Field | Value |
+|---|---|
+| Redistributed metadata | [`software/eval/sample_segments.csv`](software/eval/sample_segments.csv) (seed **42**, **60** segments, **19** distinct `video_id` values) |
+| Live Quality summary at capture | **18** sources · **60** segments · license `research-only` |
+| Example cut | Segment #1 · **1129.0–1148.0 s** · sample id **`MB_212`** · `video_id` `UyhV-OfRKfg` |
+| Timed §3.1 media | Pre-extracted local MP3s (not redistributed). Host WAVs were cut from YouTube for this workspace and are a **different byte store**. |
+
+The live Sources table showed one fewer Ready source than the 19 `video_id`
+values in the CSV. Prefer the CSV (and an export snapshot) for video-level
+membership; use the live UI to inspect controls and provenance fields.
 
 ## 1. Protocol
 
-1. Create a project named **VietRegDialog demo** and set the language to `vi`.
-2. Leave audio defaults at **WAV / PCM / 16 kHz / mono**.
-3. Turn readiness gates on so a segment needs a transcript and at least one
-   label before export.
-4. Keep **blind labelling** on.
-5. Enter a licence string and a short consent note on project settings (both
-   are copied into research JSON and the quality report).
-6. Add annotators as project members (**owner** vs **annotator**).
-7. Define three project labels with scope **whole segment**: `Miền bắc`,
-   `Miền nam`, `Miền trung`.
+1. Open the project overview. Language is **`vi`**. Status is **Active**.
 
-   ![Label settings with the three VietRegDialog region labels.](software/figures/appendix/figure-a3-labels.png)
+   ![Project overview for VietRegDialog — Về nhà đi con (Miền Bắc).](software/figures/appendix/figure-a1-overview.png)
 
-8. Only users on the system allowlist can change the global recognition
-   endpoint (`ASR_ADMIN_USER_IDS`).
+2. In **Settings**, audio defaults are **WAV / PCM / 16 kHz / mono**.
+3. Readiness gates are on: **Audio OK**, a non-empty transcript, and at least
+   one active annotation.
+4. **Hide peer labels from annotators (blind)** is on. Owners still see every
+   episode.
+5. License is **`research-only`**. Consent notes state that pilot metadata
+   comes from `sample_segments.csv` and that YouTube media is fetched by the
+   platform worker.
+6. **Members** lists four **OWNER** accounts (`nguyenquocdung`, `lc.tuong`,
+   `admin`, `hoangduy0610`). This inspection does **not** demo a second
+   annotator or overlap IAA. Add an **ANNOTATOR** and double-assign via **Work
+   queue** when you need ≥2 labelers on one segment.
 
-## 2. A cut and an accepted transcript
+   ![Project members on the live VietRegDialog demo.](software/figures/appendix/figure-a2-members.png)
 
-1. Import the YouTube URL for the episode. After the source is ready, it
-   appears in the project source list as *Về nhà đi con*.
+7. Project labels: whole-segment **`Miền bắc`**, **`Miền nam`**,
+   **`Miền trung`**, plus optional **`Toxic`** (text-in-transcript). Progress
+   at capture: **54** `Miền bắc` episodes; the other region labels unused.
 
-   ![Source list after the VietRegDialog YouTube video has been imported.](software/figures/appendix/figure-a4-sources.png)
+   ![Label settings with region labels and a Toxic span label.](software/figures/appendix/figure-a3-labels.png)
 
-2. Create a segment from **1435.0 s to 1447.0 s** (manifest `MB_219`) and queue
-   **extract** when a worker is available.
-3. Set the accepted transcript to the dialogue text from the **Miền Bắc** sheet
-   of `VietRegDialog.xlsx` for those bounds, for example:
+## 2. Sources, cut, verified artifact, transcript
+
+1. **Sources** lists imported YouTube episodes (channel *VTV Phim Việt Xưa*)
+   with **Ready** after metadata succeeds. Importing a URL and creating new
+   bounds is the usual empty-project path; here those rows already exist.
+
+   ![Source list for VietRegDialog YouTube episodes.](software/figures/appendix/figure-a4-sources.png)
+
+2. Open **Segment #1** on *VỀ NHÀ ĐI CON - Tập 28*, bounds
+   **1129.0–1148.0 s** (19 s) · `definition_revision` **1**. This matches
+   sample row **`MB_212`**.
+
+3. **Verified artifact (I2 surface).** Under **Advanced tools → Current
+   artifact**, the segment shows **Verified** from a succeeded extract job
+   (attempt 1): **WAV · 16000 Hz · 1 ch**, size **608078** bytes, created
+   13 Oct 2026. The workspace card does not print the SHA-256 string; that
+   checksum is stored on the artifact and written into research JSON / the
+   dataset ZIP when you export. Re-reading bytes against the stored digest on
+   the §3.1 pilot files is covered by the integrity scripts under
+   [`software/eval/`](software/eval/), not by this UI walk-through.
+
+   ![Verified current artifact: WAV 16 kHz mono and extract job history.](software/figures/appendix/figure-a5b-artifact.png)
+
+4. **Revision consistency (I1).** Saving new start/end bounds bumps
+   `definition_revision`. A job still running against an older
+   `expected_revision` is marked stale and cannot replace the current
+   artifact. This EXAMPLE does **not** run that race on the live host; see
+   [`software/eval/PROTOCOL.md`](software/eval/PROTOCOL.md) and the stale /
+   race tests referenced there.
+
+5. Accepted transcript on this segment:
 
    ```text
-   A: Này, Hai đứa thấy chị Huệ đâu không?
-   B: Chị Huệ bảo chị gia cửa hàng mà bố.
-   A: Sao thằng Khải lại sang đây tìm nhở?
-   C: Chắc là chị ý ghét quá không muốn nhìn mặt bố ạ.
-   A: Luyên thuyên.
+   A: Này.
+   B: Dạ.
+   A: Con có sợ mùi gì nữa không để hàng ngày nấu cơm bố tránh gia.
+   B: Con chẳng biết. Chắc là phải trải nghiệm từ từ bố ạ. Cái này ăn được này.
+   C: Ăn được hả? Mai chị lại làm tiếp cho nhá.
    ```
 
-4. Optionally queue **recognition** and compare the candidate to that text, then
-   keep the accepted transcript you verified.
+6. Project ASR is **local / PhoWhisper small**. A recognition candidate may
+   differ from the accepted text; only **Use in transcript box** (or a manual
+   edit) updates the canonical transcript. That apply step is the human gate
+   between ASR history and the exported text.
 
-   ![Segment workspace: VietRegDialog cut bounds, transcript, region labels, and gold.](software/figures/appendix/figure-a5-workspace.png)
+   ![Segment workspace: transcript, region chips, Toxic span, and gold.](software/figures/appendix/figure-a5-workspace.png)
 
-5. If you later change the end time, `definition_revision` increases. A job
-   still running against the old revision cannot become the current artifact.
+## 3. Labels and gold on the same cut
 
-## 3. Labels on the same cut
+1. Whole-segment chips: **`1 Miền bắc`**, **`2 Miền nam`**, **`3 Miền trung`**.
+   On Segment #1 the active episode is **`Miền bắc`** (Nguyen Quoc-Dung).
+2. Owner gold is also **`Miền bắc`**. Annotators never see gold while blind is
+   on.
+3. Optional schema demo: a **`Toxic`** character span on a dragged phrase.
+   Spans travel in research JSON / `spans.csv`; they do not change
+   whole-segment gold or Progress Jaccard / κ.
+4. Blind and multi-annotator agreement are product features; this live project
+   at capture did not show overlap (≥2 annotators on one segment). Use Work
+   queue when you need those metrics.
 
-1. Assign the segment so two people can label it (owner and annotator).
-2. The owner selects **`Miền bắc`**. The annotator selects **`Miền nam`**.
-   With blind labelling on, neither sees the other’s row in the workspace.
-3. Pairwise Jaccard for `{Miền bắc}` vs `{Miền nam}` is
-   `|A ∩ B| / |A ∪ B| = 0 / 2 = 0` before adjudication.
-4. The owner saves **gold** as `Miền bắc`. Annotator rows remain in the
-   research export; training views that use the `gold` supervision policy keep
-   `Miền bắc` only.
-5. Optional text span: if a token in the accepted transcript needs a
-   phrase-level tag, drag that span and assign a text-scoped label. That
-   `TranscriptSpan` does not change whole-segment gold or the Jaccard figure
-   above.
+## 4. Export (I3 surface)
 
-## 4. Export
-
-1. Export a zip with supervision policy **`gold`**, split strategy
-   **`by_source`**, seed **`42`**, and ratios **`0.8 / 0.1 / 0.1`**.
+1. **Export** → format **ZIP — audio + metadata + README**, supervision
+   **`gold`**, split **`by_source`**, seed **`42`**, ratios
+   **`0.8 / 0.1 / 0.1`**, **ready-only** as needed.
 
    ![Export form: ZIP package, gold supervision, by-source split, seed 42.](software/figures/appendix/figure-a6-export.png)
 
-2. The archive writes verified audio under `audio/` (when extract has produced
-   a current artifact) and points `metadata.csv` at that path beside the
-   transcript, start/end times, video title, and active text spans.
+2. The ZIP places verified WAVs under `audio/` and points `metadata.csv` at
+   each path beside transcript, times, title, and active spans.
 3. `spans.csv` repeats the YouTube link and clip interval on each span row.
-4. Research JSON describes the file by checksum and sample rate (no embedded
-   waveform) and keeps annotator rows, gold names, `supervised_labels`, and
-   `text_spans`. Schema version is **`youaudiolab.research_dataset` 1.2**.
-5. For this segment the gold training view contains `Miền bắc` and not
-   `Miền nam`.
-6. Additional videos from other VietRegDialog sheets would each receive their
-   own fold under `by_source`: the split is on video identifiers, then copied
-   onto segments. Same inputs reproduce the same folds; the content hash is
-   unchanged if only the export clock changes.
+4. Research JSON keeps checksum, sample rate, annotator rows, gold,
+   `supervised_labels`, `text_spans`, and split assignment. Schema:
+   **`youaudiolab.research_dataset` 1.2**.
+5. For Segment #1, gold training views keep **`Miền bắc`**. The Toxic span is
+   not a whole-segment supervised label.
+6. `by_source` assigns each video id to one fold; segments inherit that fold.
+   `content_hash` ignores the export clock.
 
 Word times from a recognition run are not written into these files. The
-published item is the checksummed waveform with its bounds, transcript, and
-optional character spans—not a text row alone.
+published item is the checksummed waveform with bounds, transcript, and
+optional character spans.
 
-## Reproduce the demo screenshots
+## Open the same project
 
-```powershell
-cd YouAudioLab
-docker compose up -d db redis
-python manage.py migrate
-python manage.py seed_admin --write-env
-python manage.py runserver 8001
-# other terminal: celery -A config.celery worker --loglevel=info --pool=solo
-python docs/software/figures/seed_appendix_demo.py --login admin --prefer-id MB_219
-python docs/software/figures/capture_appendix_a.py
-```
-
-IDs for the last seed are written to
-`docs/software/figures/appendix_demo_ids.json`.
+| Field | Value |
+|---|---|
+| Hosted project | [https://youaudiolab.duthu.net/projects/92652c59-5d8d-4223-9b5a-7ece25f8a591/](https://youaudiolab.duthu.net/projects/92652c59-5d8d-4223-9b5a-7ece25f8a591/) |
+| Login | [README — Live demo](../README.md#live-demo) |
+| Example segment | [Segment #1 · 1129.0–1148.0 s](https://youaudiolab.duthu.net/projects/92652c59-5d8d-4223-9b5a-7ece25f8a591/segments/ff1918bf-c77a-4258-9df5-8fe7af0c8fa9/) |
+| Sample metadata | [`software/eval/sample_segments.csv`](software/eval/sample_segments.csv) (`MB_212`) |
+| Screenshots captured | 27 Oct 2026 |
+| §3.1 integrity scripts | [`software/eval/`](software/eval/) |
 
 ## Related reading
 
+- [README — Live demo](../README.md#live-demo)
+- [README — Illustrative evaluation](../README.md#illustrative-evaluation)
 - [README — Building a corpus](../README.md#building-a-corpus)
 - [README — Export formats](../README.md#export-formats)
+- [software/eval/PROTOCOL.md](software/eval/PROTOCOL.md)
 - SoftwareX manuscript drafts under [`software/`](software/)
