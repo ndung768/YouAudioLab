@@ -541,6 +541,9 @@ Source repository: [https://github.com/ndung768/YouAudioLab](https://github.com/
 Release:
 [v0.1.0](https://github.com/ndung768/YouAudioLab/releases/tag/v0.1.0)
 
+Archival DOI:
+[https://doi.org/10.5281/zenodo.23752831](https://doi.org/10.5281/zenodo.23752831)
+
 The software is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE).
 
 **A software licence does not cover the recordings you collect.** Audio and

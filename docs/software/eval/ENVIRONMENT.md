@@ -49,6 +49,5 @@ uv run pytest tests/test_jobs_races.py tests/test_asr_stale.py tests/test_i3_exp
 ## Archival record
 
 The GitHub release tag `v0.1.0` archives source, Compose/Dockerfile pins, `uv.lock`,
-`docs/software/eval/` scripts, CSV logs, and redistributable fixtures. A Zenodo DOI
-deposit of the same tree is recommended for a second permanent landing page; until
-deposited, treat the GitHub release as the archival reproducibility package.
+`docs/software/eval/` scripts, CSV logs, and redistributable fixtures. Archival
+Zenodo deposit of the same release: https://doi.org/10.5281/zenodo.23752831
