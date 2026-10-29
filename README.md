@@ -1,15 +1,19 @@
 # YouAudioLab
 
-YouAudioLab is a web platform for building labelled speech datasets from YouTube
-videos. A researcher imports a video, cuts time-bounded segments, extracts
-checksummed audio, and optionally drafts a transcript with ASR. Human annotators
-then label each segment. The owner can hide peer labels, measure agreement,
-adjudicate a gold set, and export a snapshot that does not leak the same video
-into both train and test.
+YouAudioLab is an open-source platform for building **reproducible YouTube-derived
+audio–text datasets** while retaining **source-video metadata** and **processing
+provenance**. A researcher registers a YouTube source, defines time-bounded
+segments, extracts checksummed WAV artifacts, and optionally drafts a transcript
+with ASR. Human annotators label each segment; the owner can hide peer labels,
+measure agreement, curate a gold set, and export a snapshot that keeps the same
+video out of both train and test.
 
-It was built for speech and audio NLP research, where the scarce resource is a
-corpus you can defend: known cuts, known annotators, and a holdout that is not
-the same recording as the training set.
+The design target is an auditable corpus object: known source bytes and
+metadata, known cuts, revision-checked artifacts, known annotators, and a
+source-video split. Version 0.1.0 does **not** extract visual features or ship a
+self-contained video dataset; retained video IDs, descriptions, and
+source-relative timestamps support later audiovisual linkage where the original
+video can lawfully be accessed.
 
 ## Live demo
 
@@ -37,24 +41,27 @@ A hosted workspace is at **[https://youaudiolab.duthu.net/](https://youaudiolab.
 
 ## What it does
 
-- Imports a YouTube URL, stores video metadata, and lets the owner define
-  segments by start and end time. Changing the bounds bumps a definition
-  revision so an old audio cut cannot be published as current.
-- Extracts a WAV (PCM, 16 kHz, mono by default) with FFmpeg and records a
-  checksum. ASR and AI suggestions stay as candidates until a person applies
-  them to the canonical transcript.
-- Gives annotators a workspace on one segment: listen, read the transcript,
-  assign project labels to the whole clip, or select a word or phrase in the
-  transcript and label that text. When blind mode is on, annotators see only
+- **YouTube-native workflow.** Import a URL, store video metadata, define
+  segments, extract audio, review ASR/AI suggestions, annotate, and export in
+  one environment.
+- **Revision-aware artifact provenance.** Each extract job stores
+  `expected_revision`. If bounds change from interval A to B while extraction A
+  is still running, `definition_revision` increments and `current_artifact` is
+  cleared; the old job is marked stale and cannot publish the A cut as current.
+  The segment has no current WAV until a successful extract for B. Verified
+  artifacts keep a SHA-256 checksum.
+- **Annotation and dataset provenance.** Per-annotator labels, accepted
+  transcripts, owner-curated gold, supervision policy, and source-video split
+  travel with the export. ASR and AI outputs stay candidates until a person
+  applies them.
+- Annotators work one segment at a time: listen, read the transcript, label the
+  whole clip, or select a phrase and label that text. Blind mode shows only
   their own episodes and spans.
-- Routes work through a queue (assign, start, complete, release). Overlap is
-  how you get agreement: assign the same segment to more than one person.
-- Reports Jaccard, Cohen’s κ, and Fleiss’ κ on Progress, plus a quality report
-  of duration buckets and per-video coverage. The owner can save gold labels
-  or adopt a majority.
-- Exports a research snapshot (full episodes) and training views that use an
-  explicit supervision policy. Splits are by source (the video), not by random
-  segment.
+- Work queue (assign, start, complete, release) supports overlap for agreement.
+  Progress reports Jaccard, Cohen’s κ, and Fleiss’ κ; Quality covers duration
+  buckets and per-video coverage.
+- Exports include verified WAVs in the dataset zip. Splits are by source video
+  (default seed 42, ratios 0.8 / 0.1 / 0.1), not by random segment.
 
 ASR and AI keys stay on the account or system settings and are encrypted at
 rest. Project settings only choose which provider and model to inherit.
@@ -156,14 +163,14 @@ A full walk-through of one YouTube cut—protocol, extract, ASR apply, dual
 annotation with optional text spans, and a `by_source` export—is in
 **[docs/EXAMPLE.md](docs/EXAMPLE.md)** (with UI screenshots).
 
-SoftwareX manuscript drafts, figures, and the timing-eval protocol live under
-**[docs/software/](docs/software/)**. The article links to the Example walk-through
-instead of repeating it.
+SoftwareX manuscript drafts, figures, and the eval protocol live under
+**[docs/software/](docs/software/)**. The article links to the Example
+walk-through instead of repeating it.
 
 ## Illustrative evaluation
 
-Version 0.1.0 reports two separate checks. They share a pilot sample and use
-different procedures. The speech models differ as well. Logs and the
+Version 0.1.0 reports **three** checks that share one pilot sample but use
+different procedures and (where noted) different models. Logs and the
 environment record are under [docs/software/eval/](docs/software/eval/). Confirm
 the figures there before quoting them; this section is a summary.
 
@@ -209,13 +216,13 @@ and fixtures.
 
 *Figure 4. Workflow for comparing manual and AI-assisted audio annotation in YouAudioLab.*
 
-This session uses other models than the timing run: PhoWhisper-small drafts the
-transcript, and GPT-5.6-luna proposes whole-segment labels. One annotator first
-transcribed and labelled the same 60 segments by hand. On the second pass the
-segment order was changed, the first pass was hidden, and the annotator
-reviewed those suggestions. The manual label set is that person’s first pass,
-used as the reference for this comparison. It is a single-annotator reference
-on this sample.
+**Separate models from the timing run above:** this session uses
+PhoWhisper-small for transcription drafts and OpenAI `gpt-5.6-luna` for
+whole-segment label suggestions. One annotator first transcribed and labelled
+the same 60 segments by hand. On the second pass the segment order was changed,
+the first pass was hidden, and the annotator reviewed those suggestions. The
+manual label set is that person’s first pass, used as the reference for this
+comparison. It is a single-annotator reference on this sample.
 
 Cohen’s κ treats each whole-segment label set as one nominal category.
 Transcript comparison counts words after lowercasing, punctuation removal, and
@@ -236,13 +243,36 @@ is low.
 Exact label sets matched on 52 segments and exact transcripts on 31, so
 segment-level transcript review still matters on this sample. The same person
 heard the same audio twice, manual pass first. The 5,048 s gap (50.72% of the
-manual pass) describes that order of work.
+manual pass; speedup factor **2.03**) describes that order of work; it is an
+exploratory observation, not a causal estimate of AI benefit.
 
 Download the exported pilot package for this comparison:
 [Speech Emotion-dataset_zip.zip](docs/software/eval/manually_assited_comparison/Speech%20Emotion-dataset_zip.zip)
 (companion CSVs and the evaluation workbook are in the same
 [manually_assited_comparison](docs/software/eval/manually_assited_comparison/)
 folder).
+
+### Comparative workflow vs Label Studio
+
+A single-operator stopwatch comparison used the same 19 videos and 60
+pre-defined segment bounds. Source selection and start/end times were given in
+advance so the timed gap is **active preparation**, not content selection.
+Figures describe these two workflows only—not a general usability or
+performance benchmark across all Label Studio setups.
+
+| Stage | Label Studio-based workflow (evaluated) | YouAudioLab |
+|---|---|---|
+| Active source / audio preparation | External tools; ~**180 s** / video | Integrated URL registration; ~**15 s** / video |
+| Segment bounds | Manual; comparable effort | Integrated; comparable effort |
+| Extract + annotation-task creation | External cut / import | Automatic after bounds |
+| ASR / LLM suggestions | Custom ML backend | Integrated ASR / LLM |
+| Human review (60 segments) | 55 min 02 s | 53 min 18 s (Δ 104 s) |
+
+The main efficiency difference was preparation and handoff (~91.7% less active
+user time at that stage in this comparison). Review time was similar.
+Equivalent provenance can be built beside Label Studio; YouAudioLab keeps
+source metadata, segment revisions, processing records, and SHA-256 checks in
+the processing path itself.
 
 ## Building a corpus
 
@@ -470,6 +500,16 @@ Further notes: [architecture](docs/architecture.md),
 
 ## Known limitations
 
+- Retained video metadata is **not** synchronized frames or precomputed visual
+  features.
+- Machine timing and FFmpeg repeatability used **pre-extracted local MP3s**, not
+  live YouTube retrieval; live-retrieval reproducibility is not claimed.
+- Artifact-level reproducibility is within one environment and configuration;
+  cross-platform bitwise identity is not claimed.
+- `content_hash` fingerprints a concrete DB snapshot (entity IDs and row
+  timestamps included), not a UUID-free semantic dataset identity.
+- Checksums assert integrity at verification time; they do not by themselves
+  prevent later silent overwrite of stored files.
 - In-transcript labels are character spans on the accepted transcript (a word
   or a dragged phrase), not a BIO tag on every token. Agreement and gold still
   apply to the whole segment. Doccano export stays segment classification;
@@ -483,8 +523,13 @@ Further notes: [architecture](docs/architecture.md),
   in the export.
 - Agreement is multi-label set overlap plus per-label Cohen/Fleiss on presence,
   not Krippendorff’s alpha.
-- Gold is a label set the owner saves. It is not a separate adjudication
-  workflow with a conflict queue.
+- Gold is a label set the owner saves (owner-curated reference, not independent
+  ground truth). It is not a separate adjudication workflow with a conflict
+  queue.
+- Source-video splitting reduces shared-video leakage; it does not guarantee
+  speaker-disjoint folds when the same speaker appears in more than one video.
+- Human–AI and Label Studio timing results are single-operator / single-annotator
+  exploratory observations (order and familiarity effects possible).
 - YouTube download depends on yt-dlp and, for some videos, a cookies file.
   Quota and availability are outside this app.
 - Celery does not reload when you edit task code. Restart the worker.
@@ -493,6 +538,9 @@ Further notes: [architecture](docs/architecture.md),
 ## License and data
 
 Source repository: [https://github.com/ndung768/YouAudioLab](https://github.com/ndung768/YouAudioLab)
+
+Release:
+[v0.1.0](https://github.com/ndung768/YouAudioLab/releases/tag/v0.1.0)
 
 The software is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE).
 
