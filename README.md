@@ -75,8 +75,8 @@ rest. Project settings only choose which provider and model to inherit.
 Six layers: browser (projects, segment workspace with player/transcript/labels,
 members, export), Django pages and REST API over domain services, PostgreSQL,
 file store for source cache and checksummed WAVs, Redis as Celery broker only,
-and workers (yt-dlp, FFmpeg, on-server or OpenAI ASR, optional Ollama on the same host). 
-Pages and the API share the same membership checks. Slow work — metadata,
+and workers (yt-dlp, FFmpeg, on-server or OpenAI ASR, optional Ollama on the same
+host). Pages and the API share the same membership checks. Slow work — metadata,
 audio extract, transcription — runs in Celery. A job stores the segment
 revision it was started against. If the bounds change before publish, the job
 becomes stale and does not replace the current artifact.
@@ -163,9 +163,8 @@ A full walk-through of one YouTube cut—protocol, extract, ASR apply, dual
 annotation with optional text spans, and a `by_source` export—is in
 **[docs/EXAMPLE.md](docs/EXAMPLE.md)** (with UI screenshots).
 
-SoftwareX manuscript drafts, figures, and the eval protocol live under
-**[docs/software/](docs/software/)**. The article links to the Example
-walk-through instead of repeating it.
+Figures and the evaluation protocol live under
+**[docs/software/](docs/software/)**.
 
 ## Illustrative evaluation
 
@@ -480,7 +479,7 @@ apps/processing/        Jobs, artifacts, ASR, AI assist, media pipeline
 templates/              Bootstrap 5 pages
 static/                 CSS and JavaScript
 locale/                 English / Vietnamese message catalogs
-docs/                   Design notes; EXAMPLE.md; software/ (SoftwareX + eval)
+docs/                   Design notes; EXAMPLE.md; software/ (figures + eval)
 tests/                  pytest
 ```
 
@@ -491,7 +490,7 @@ pytest
 
 Further notes: [architecture](docs/architecture.md),
 [Example walk-through](docs/EXAMPLE.md),
-[SoftwareX drafts and eval](docs/software/),
+[figures and eval](docs/software/),
 [export design](docs/gate-ex1-research-dataset-export-design.md)
 (historical; shipped schema is **1.2**),
 [splits and supervision](docs/gate-ex3-ml-export-splits.md),
