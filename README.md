@@ -221,7 +221,7 @@ and fixtures.
 
 ![Workflow for comparing manual and AI-assisted audio annotation in YouAudioLab](docs/software/figures/Figure%204.%20Workflow%20for%20comparing%20manual%20and%20AI-assisted%20audio%20annotation%20in%20YouAudioLab.png)
 
-*Figure 4. Manual and AI-assisted dataset preparation workflows (exploratory).*
+*Figure 4. Manual and AI-assisted dataset preparation and annotation workflows used in the exploratory assessment.*
 
 **Separate models from the timing run above:** this assessment uses
 PhoWhisper-small for transcription and OpenAI `gpt-5.6-luna` for whole-segment
