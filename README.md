@@ -544,10 +544,7 @@ Further notes: [architecture](docs/architecture.md),
   queue.
 - Source-video splitting reduces shared-video leakage; it does not guarantee
   speaker-disjoint folds when the same speaker appears in more than one video.
-- Human–AI and Label Studio timing results are single-operator / single-annotator
-  exploratory observations (order and familiarity effects possible). The
-  human–AI clock covers full dataset preparation (create → export), not
-  annotation-only; transcript agreement is exact segment match, not WER.
+- Human–AI and Label Studio timing results are single-operator / single-annotator exploratory observations (order and familiarity effects possible). The human–AI clock covers full dataset preparation (create → export), not annotation-only. Exact normalized transcript match is the primary agreement metric; WER and CER are reported as supplementary ASR error metrics.
 - YouTube download depends on yt-dlp and, for some videos, a cookies file.
   Quota and availability are outside this app.
 - Celery does not reload when you edit task code. Restart the worker.
