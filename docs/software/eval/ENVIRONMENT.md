@@ -50,8 +50,8 @@ The Docker image:
 - writes the apt FFmpeg build banner into `/app/FFMPEG_BUILD.txt` (and
   `/opt/youaudiolab/ffmpeg-version.txt`) as a record of the installed build.
 
-That FFmpeg version is **not** the Windows 7.1.1 essentials build used for the
-timed pilot. Cross-environment bitwise identity of WAV bytes is not claimed.
+The FFmpeg inside the image is **7.1.5** (Debian trixie build `7:7.1.5-0+deb13u1`). It is
+**not** the Windows 7.1.1 essentials build used for the timed pilot. Cross-environment bitwise identity of WAV bytes is not claimed.
 
 After `docker compose build`, record digests when depositing a release:
 
